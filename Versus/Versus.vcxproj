@@ -219,6 +219,9 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\cat.dds" />
+    <Image Include="assets\cat.png" />
+    <Image Include="assets\sunset.jpg" />
     <Image Include="directx.ico" />
   </ItemGroup>
   <ItemGroup>

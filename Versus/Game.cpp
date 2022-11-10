@@ -91,7 +91,29 @@ void Game::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
-    // TODO: Add your rendering code here.
+    float time = float(m_timer.GetTotalSeconds());
+
+    ID3D12DescriptorHeap* heaps[] = { m_resourceDescriptors->Heap() };
+    commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+
+    m_spriteBatch->Begin(commandList);
+
+    // BACKGROUND
+    m_spriteBatch->Draw(m_resourceDescriptors->GetGpuHandle(Descriptors::Background), GetTextureSize(m_background.Get()), m_fullscreenRect);
+
+    // STATIC CAT
+    m_spriteBatch->Draw(m_resourceDescriptors->GetGpuHandle(Descriptors::Cat), GetTextureSize(m_texture.Get()), m_screenPos, nullptr, Colors::White, 0.f, m_origin);
+
+    // ROTATING CAT
+    //m_spriteBatch->Draw(m_resourceDescriptors->GetGpuHandle(Descriptors::Cat), GetTextureSize(m_texture.Get()), m_screenPos, nullptr, Colors::White, cosf(time) * 4.f, m_origin);
+
+    // SCALING CAT
+    //m_spriteBatch->Draw(m_resourceDescriptors->GetGpuHandle(Descriptors::Cat), GetTextureSize(m_texture.Get()), m_screenPos, nullptr, Colors::White, 0.f, m_origin, cosf(time) + 2.f);
+
+    // TINTED CAT
+    //m_spriteBatch->Draw(m_resourceDescriptors->GetGpuHandle(Descriptors::Cat), GetTextureSize(m_texture.Get()), m_screenPos, nullptr, Colors::Green, 0.f, m_origin);
+
+    m_spriteBatch->End();
 
     PIXEndEvent(commandList);
 
@@ -191,8 +213,7 @@ void Game::CreateDeviceDependentResources()
 
     // Check Shader Model 6 support
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_0 };
-    if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel)))
-        || (shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_0))
+    if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel))) || (shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_0))
     {
 #ifdef _DEBUG
         OutputDebugStringA("ERROR: Shader Model 6.0 is not supported!\n");
@@ -203,13 +224,43 @@ void Game::CreateDeviceDependentResources()
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory = std::make_unique<GraphicsMemory>(device);
 
-    // TODO: Initialize device dependent objects here (independent of window size).
+    m_resourceDescriptors = std::make_unique<DescriptorHeap>(device, Descriptors::Count);
+
+    ResourceUploadBatch resourceUpload(device);
+
+    resourceUpload.Begin();
+
+    DX::ThrowIfFailed(CreateWICTextureFromFile(device, resourceUpload, L"assets/cat.dds", m_texture.ReleaseAndGetAddressOf()));
+    CreateShaderResourceView(device, m_texture.Get(), m_resourceDescriptors->GetCpuHandle(Descriptors::Cat));
+
+    DX::ThrowIfFailed(CreateWICTextureFromFile(device, resourceUpload, L"assets/sunset.jpg", m_background.ReleaseAndGetAddressOf()));
+    CreateShaderResourceView(device, m_background.Get(), m_resourceDescriptors->GetCpuHandle(Descriptors::Background));
+
+    RenderTargetState rtState(m_deviceResources->GetBackBufferFormat(), m_deviceResources->GetDepthBufferFormat());
+
+    SpriteBatchPipelineStateDescription pd(rtState);
+    m_spriteBatch = std::make_unique<SpriteBatch>(device, resourceUpload, pd);
+
+    XMUINT2 catSize = GetTextureSize(m_texture.Get());
+
+    m_origin.x = float(catSize.x / 2);
+    m_origin.y = float(catSize.y / 2);
+
+    auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
+    uploadResourcesFinished.wait();
 }
 
 // Allocate all memory resources that change on a window SizeChanged event.
 void Game::CreateWindowSizeDependentResources()
 {
-    // TODO: Initialize windows-size dependent objects here.
+    auto viewport = m_deviceResources->GetScreenViewport();
+    m_spriteBatch->SetViewport(viewport);
+
+    auto size = m_deviceResources->GetOutputSize();
+    m_screenPos.x = float(size.right) / 2.f;
+    m_screenPos.y = float(size.bottom) / 2.f;
+
+    m_fullscreenRect = m_deviceResources->GetOutputSize();
 }
 
 void Game::OnDeviceLost()
@@ -218,6 +269,10 @@ void Game::OnDeviceLost()
 
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory.reset();
+    m_resourceDescriptors.reset();
+    m_spriteBatch.reset();
+    m_texture.Reset();
+    m_background.Reset();
 }
 
 void Game::OnDeviceRestored()
