@@ -91,7 +91,18 @@ void Game::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
-    // TODO: Add your rendering code here.
+    ID3D12DescriptorHeap* heaps[] = { m_resourceDescriptors->Heap() };
+    commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+
+    m_spriteBatch->Begin(commandList);
+
+    const wchar_t* output = L"Hello World";
+
+    Vector2 origin = m_font->MeasureString(output) / 2.f;
+
+    m_font->DrawString(m_spriteBatch.get(), output, m_fontPos, Colors::White, 0.f, origin);
+
+    m_spriteBatch->End();
 
     PIXEndEvent(commandList);
 
@@ -202,13 +213,33 @@ void Game::CreateDeviceDependentResources()
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory = std::make_unique<GraphicsMemory>(device);
 
-    // TODO: Initialize device dependent objects here (independent of window size).
+    m_resourceDescriptors = std::make_unique<DescriptorHeap>(device, Descriptors::Count);
+
+    ResourceUploadBatch resourceUpload(device);
+
+    resourceUpload.Begin();
+
+    m_font = std::make_unique<SpriteFont>(device, resourceUpload, L"myfile.spritefont", m_resourceDescriptors->GetCpuHandle(Descriptors::MyFont), m_resourceDescriptors->GetGpuHandle(Descriptors::MyFont));
+
+    RenderTargetState rtState(m_deviceResources->GetBackBufferFormat(), m_deviceResources->GetDepthBufferFormat());
+
+    SpriteBatchPipelineStateDescription pd(rtState);
+    m_spriteBatch = std::make_unique<SpriteBatch>(device, resourceUpload, pd);
+    
+    auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
+
+    uploadResourcesFinished.wait();
 }
 
 // Allocate all memory resources that change on a window SizeChanged event.
 void Game::CreateWindowSizeDependentResources()
 {
-    // TODO: Initialize windows-size dependent objects here.
+    auto viewport = m_deviceResources->GetScreenViewport();
+    m_spriteBatch->SetViewport(viewport);
+
+    auto size = m_deviceResources->GetOutputSize();
+    m_fontPos.x = float(size.right) / 2.f;
+    m_fontPos.y = float(size.bottom) / 2.f;
 }
 
 void Game::OnDeviceLost()
@@ -217,6 +248,9 @@ void Game::OnDeviceLost()
 
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory.reset();
+    m_font.reset();
+    m_resourceDescriptors.reset();
+    m_spriteBatch.reset();
 }
 
 void Game::OnDeviceRestored()

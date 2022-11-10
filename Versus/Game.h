@@ -63,4 +63,16 @@ private:
 
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
+
+    std::unique_ptr<DirectX::DescriptorHeap> m_resourceDescriptors;
+    std::unique_ptr<DirectX::SpriteFont> m_font;
+
+    std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
+    DirectX::SimpleMath::Vector2 m_fontPos;
+
+    enum Descriptors
+    {
+        MyFont,
+        Count
+    };
 };
