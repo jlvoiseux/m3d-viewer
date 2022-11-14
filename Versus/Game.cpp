@@ -67,7 +67,9 @@ void Game::Update(DX::StepTimer const& timer)
 
     float elapsedTime = float(timer.GetElapsedSeconds());
 
-    // TODO: Add your game logic here.
+    auto time = static_cast<float>(timer.GetTotalSeconds());
+    m_world = Matrix::CreateRotationZ(cosf(time) * 2.f);
+
     elapsedTime;
 
     PIXEndEvent();
@@ -91,7 +93,12 @@ void Game::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
-    // TODO: Add your rendering code here.
+    ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
+    commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+
+    Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
+
+    m_model->Draw(commandList, m_modelNormal.cbegin());
 
     PIXEndEvent(commandList);
 
@@ -202,13 +209,39 @@ void Game::CreateDeviceDependentResources()
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory = std::make_unique<GraphicsMemory>(device);
 
-    // TODO: Initialize device dependent objects here (independent of window size).
+    m_states = std::make_unique<CommonStates>(device);
+
+    m_model = Model::CreateFromSDKMESH(device, L"cup.sdkmesh");
+
+    ResourceUploadBatch resourceUpload(device);
+
+    resourceUpload.Begin();
+
+    m_model->LoadStaticBuffers(device, resourceUpload);
+    m_modelResources = m_model->LoadTextures(device, resourceUpload);
+
+    m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
+
+    auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
+
+    uploadResourcesFinished.wait();
+
+    RenderTargetState rtState(m_deviceResources->GetBackBufferFormat(), m_deviceResources->GetDepthBufferFormat());
+
+    EffectPipelineStateDescription pd(nullptr, CommonStates::Opaque, CommonStates::DepthDefault, CommonStates::CullClockwise, rtState);
+
+    m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pd);
+
+    m_world = Matrix::Identity;
 }
 
 // Allocate all memory resources that change on a window SizeChanged event.
 void Game::CreateWindowSizeDependentResources()
 {
-    // TODO: Initialize windows-size dependent objects here.
+    auto size = m_deviceResources->GetOutputSize();
+
+    m_view = Matrix::CreateLookAt(Vector3(2.f, 2.f, 2.f), Vector3::Zero, Vector3::UnitY);
+    m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f, float(size.right) / float(size.bottom), 0.1f, 10.f);
 }
 
 void Game::OnDeviceLost()
@@ -217,6 +250,11 @@ void Game::OnDeviceLost()
 
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory.reset();
+    m_states.reset();
+    m_fxFactory.reset();
+    m_modelResources.reset();
+    m_model.reset();
+    m_modelNormal.clear();
 }
 
 void Game::OnDeviceRestored()
