@@ -97,7 +97,7 @@ std::unique_ptr<Model> __cdecl ModelExtended::CreateFromM3D(
 
     // Vertex buffer
     std::vector<VertexPositionNormalTexture> vertices;
-    std::map<uint16_t, uint16_t> m3dVertIndexMap;
+    std::map<std::string, uint16_t> m3dVertIndexMap;
 
     // Index Buffer
     std::vector<uint16_t> indices;
@@ -106,16 +106,27 @@ std::unique_ptr<Model> __cdecl ModelExtended::CreateFromM3D(
             uint16_t currVert = it->vertex[i];
             uint16_t currNorm = it->normal[i];
             uint16_t currTexcoord = it->texcoord[i];
-            std::map<uint16_t, uint16_t>::iterator mapIt = m3dVertIndexMap.find(currVert);
+            VertexPositionNormalTexture vertexData = VertexPositionNormalTexture(
+                XMFLOAT3(m3dVerts[currVert].x, m3dVerts[currVert].y, m3dVerts[currVert].z),
+                XMFLOAT3(m3dVerts[currNorm].x, m3dVerts[currNorm].y, m3dVerts[currNorm].z),
+                XMFLOAT2(m3dTex[currTexcoord].u, m3dTex[currTexcoord].v)
+            );
+            std::string vertexDataKey =
+                std::to_string(vertexData.position.x) +
+                std::to_string(vertexData.position.y) +
+                std::to_string(vertexData.position.z) +
+                std::to_string(vertexData.normal.x) +
+                std::to_string(vertexData.normal.y) +
+                std::to_string(vertexData.normal.z) +
+                std::to_string(vertexData.textureCoordinate.x) +
+                std::to_string(vertexData.textureCoordinate.y);
+
+            std::map<std::string, uint16_t>::iterator mapIt = m3dVertIndexMap.find(vertexDataKey);
             if (mapIt == m3dVertIndexMap.end()) {
                 uint16_t newIndex = m3dVertIndexMap.size();
                 indices.push_back(newIndex);
-                vertices.push_back(VertexPositionNormalTexture(
-                    XMFLOAT3(m3dVerts[currVert].x, m3dVerts[currVert].y, m3dVerts[currVert].z),
-                    XMFLOAT3(m3dVerts[currNorm].x, m3dVerts[currNorm].y, m3dVerts[currNorm].z),
-                    XMFLOAT2(m3dTex[currTexcoord].u, m3dTex[currTexcoord].v)
-                ));
-                m3dVertIndexMap[currVert] = newIndex;
+                vertices.push_back(vertexData);
+                m3dVertIndexMap[vertexDataKey] = newIndex;
             }
             else {
                 indices.push_back(mapIt->second);
