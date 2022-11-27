@@ -55,6 +55,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <codecvt>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -62,12 +63,18 @@
 #include <cwchar>
 #include <exception>
 #include <iterator>
+#include <locale>
+#include <map>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <system_error>
 #include <tuple>
+#include <unordered_set>
+
 
 // DirectXTK12 headers
+#include "BinaryReader.h"
 #include "BufferHelpers.h"
 #include "CommonStates.h"
 #include "DDSTextureLoader.h"
@@ -79,7 +86,6 @@
 #include "GeometricPrimitive.h"
 #include "GraphicsMemory.h"
 #include "Keyboard.h"
-#include "Model.h"
 #include "Mouse.h"
 #include "PostProcess.h"
 #include "PrimitiveBatch.h"

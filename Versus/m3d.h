@@ -6424,6 +6424,14 @@ namespace M3D {
             Model();
 #endif
         }
+        Model(_unused const std::vector<unsigned char> data, _unused m3dread_t ReadFileCB,
+            _unused m3dfree_t FreeCB) {
+#ifndef M3D_NOIMPORTER
+            this->model = m3d_load((unsigned char*)&data[0], ReadFileCB, FreeCB, NULL);
+#else
+            Model();
+#endif
+        }
         ~Model() { m3d_free(this->model); }
 
     public:

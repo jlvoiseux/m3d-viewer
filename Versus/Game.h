@@ -72,5 +72,6 @@ private:
     std::unique_ptr<DirectX::EffectFactory> m_fxFactory;
     std::unique_ptr<DirectX::EffectTextureFactory> m_modelResources;
     std::unique_ptr<DirectX::Model> m_model;
+    std::unique_ptr<DirectX::Model> m_model2;
     DirectX::Model::EffectCollection m_modelNormal;
 };
