@@ -259,7 +259,7 @@ void Game::CreateDeviceDependentResources()
 
     m_states = std::make_unique<CommonStates>(device);
 
-    m_model = ModelExtended::CreateFromM3D(device, L"mc.m3d");
+    m_model = ModelExtended::CreateFromM3D(device, L"cube.m3d");
     //m_model = ModelExtended::CreateFromSDKMESH(device, L"quad.sdkmesh");
 
     ResourceUploadBatch resourceUpload(device);

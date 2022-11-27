@@ -70,8 +70,6 @@
 #include <string>
 #include <system_error>
 #include <tuple>
-#include <unordered_set>
-
 
 // DirectXTK12 headers
 #include "BinaryReader.h"
@@ -86,6 +84,7 @@
 #include "GeometricPrimitive.h"
 #include "GraphicsMemory.h"
 #include "Keyboard.h"
+#include "ModelExtended.h"
 #include "Mouse.h"
 #include "PostProcess.h"
 #include "PrimitiveBatch.h"
@@ -97,6 +96,9 @@
 #include "SpriteFont.h"
 #include "VertexTypes.h"
 #include "WICTextureLoader.h"
+
+#include <shlobj.h>
+#include <strsafe.h>
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
