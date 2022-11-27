@@ -109,7 +109,7 @@ std::unique_ptr<Model> __cdecl ModelExtended::CreateFromM3D(
             VertexPositionNormalTexture vertexData = VertexPositionNormalTexture(
                 XMFLOAT3(m3dVerts[currVert].x, m3dVerts[currVert].y, m3dVerts[currVert].z),
                 XMFLOAT3(m3dVerts[currNorm].x, m3dVerts[currNorm].y, m3dVerts[currNorm].z),
-                XMFLOAT2(m3dTex[currTexcoord].u, m3dTex[currTexcoord].v)
+                XMFLOAT2(m3dTex[currTexcoord].u, 1-m3dTex[currTexcoord].v)
             );
             std::string vertexDataKey =
                 std::to_string(vertexData.position.x) +
