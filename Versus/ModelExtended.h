@@ -17,5 +17,7 @@ public:
         _In_opt_ ID3D12Device* device,
         _In_z_ const wchar_t* szFileName,
         ModelLoaderFlags flags = ModelLoader_Default);
+
+    static std::wstring StringToWString(std::string input);
 };
 

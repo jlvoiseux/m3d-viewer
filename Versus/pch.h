@@ -63,6 +63,7 @@
 #include <cwchar>
 #include <exception>
 #include <iterator>
+#include <limits>
 #include <locale>
 #include <map>
 #include <memory>

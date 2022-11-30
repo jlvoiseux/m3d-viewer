@@ -51,7 +51,7 @@ std::unique_ptr<Model> __cdecl ModelExtended::CreateFromM3D(
     materials.resize(m3dMaterials.size());
     for (auto it = begin(m3dMaterials); it != end(m3dMaterials); ++it) {
         auto& mat = materials[0];
-        mat.name = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(it->name);
+        mat.name = StringToWString(it->name);
         mat.ambientColor = XMFLOAT3(1.f, 1.f, 1.f);
         mat.diffuseColor = XMFLOAT3(1.f, 1.f, 1.f);
         mat.specularColor = XMFLOAT3(0.3f, 0.3f, 0.3f);
@@ -69,7 +69,7 @@ std::unique_ptr<Model> __cdecl ModelExtended::CreateFromM3D(
     int texCount = 0;
     for (auto it = begin(m3dTextures); it != end(m3dTextures); ++it) {
         std::string texName = it->name + fileFormat;
-        std::wstring wTexName = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(texName);
+        std::wstring wTexName = StringToWString(texName);
         textureDictionary[wTexName] = texCount;
         texCount++;
     }
@@ -147,6 +147,57 @@ std::unique_ptr<Model> __cdecl ModelExtended::CreateFromM3D(
     mesh->opaqueMeshParts.emplace_back(part);
     model->meshes.emplace_back(mesh);
 
+    constexpr unsigned int maxInt = std::numeric_limits<unsigned int>::max();
+    std::vector<m3db_t> m3dBones = m3dModel->getBones();
+    const size_t bNum = m3dBones.size();
+    std::map<unsigned int, unsigned int> siblinglessChildIndex;
+    ModelBone::Collection bones;
+    bones.reserve(bNum);
+    auto transforms = ModelBone::MakeArray(bNum);
+    unsigned int currIndex = 0;
+
+    for (auto it = begin(m3dBones); it != end(m3dBones); ++it) {
+        ModelBone bone;
+        std::string currName = it->name;
+        unsigned int currParent = it->parent;
+        bone.name = StringToWString(it->name);
+        bone.parentIndex = currParent;
+        bone.childIndex = maxInt;
+        bone.siblingIndex = maxInt;
+        // Due to the structure of M3D, parent alwys exists
+        // TODO - handle edge case of malformed M3D
+        if (currParent != maxInt) {
+            // Parent exists and has no child
+            if (bones[currParent].childIndex == maxInt) {
+                bones[currParent].childIndex = currIndex;
+                siblinglessChildIndex[currParent] = currIndex;
+            }
+            else {
+                // Parent exists and has a child -> find a free sibling
+                bones[siblinglessChildIndex[currParent]].siblingIndex = currIndex;
+                siblinglessChildIndex[currParent] = currIndex;
+            }
+        }
+        bones.push_back(bone);
+        XMFLOAT4X4* temp = &XMFLOAT4X4(it->mat4);
+        transforms[currIndex] = XMLoadFloat4x4(temp);
+        currIndex++;
+    }
+    std::swap(model->bones, bones);
+
+    // Compute inverse bind pose matrices for the model
+    auto bindPose = ModelBone::MakeArray(bNum);
+    model->CopyAbsoluteBoneTransforms(bNum, transforms.get(), bindPose.get());
+
+    auto invBoneTransforms = ModelBone::MakeArray(bNum);
+    for (size_t j = 0; j < bNum; ++j)
+    {
+        invBoneTransforms[j] = XMMatrixInverse(nullptr, bindPose[j]);
+    }
+
+    std::swap(model->boneMatrices, transforms);
+    std::swap(model->invBindPoseMatrices, invBoneTransforms);
+
     return model;
 }
 
@@ -171,4 +222,9 @@ std::unique_ptr<Model> ModelExtended::CreateFromM3D(
     model->name = szFileName;
 
     return model;
+}
+
+std::wstring ModelExtended::StringToWString(std::string input)
+{
+    return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(input);
 }

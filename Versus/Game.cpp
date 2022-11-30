@@ -114,9 +114,9 @@ void Game::Update(DX::StepTimer const& timer)
     PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update");
 
     float elapsedTime = float(timer.GetElapsedSeconds());
-
+    m_animation.Update(elapsedTime);
     auto time = static_cast<float>(timer.GetTotalSeconds());
-    m_world = Matrix::CreateRotationZ(cosf(time) * 2.f);
+    m_world = XMMatrixRotationY(time);
 
     elapsedTime;
 
@@ -141,12 +141,15 @@ void Game::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
+    size_t nbones = m_model->bones.size();
+    m_animation.Apply(*m_model, nbones, m_drawBones.get());
+
     ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
     commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
 
     Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
 
-    m_model->Draw(commandList, m_modelNormal.cbegin());
+    m_model->DrawSkinned(commandList, nbones, m_drawBones.get(), m_world, m_modelNormal.cbegin());
 
     PIXEndEvent(commandList);
 
@@ -260,7 +263,13 @@ void Game::CreateDeviceDependentResources()
     m_states = std::make_unique<CommonStates>(device);
 
     m_model = ModelExtended::CreateFromM3D(device, L"mc.m3d");
-    //m_model = ModelExtended::CreateFromSDKMESH(device, L"mc.sdkmesh");
+    //m_model = ModelExtended::CreateFromSDKMESH(device, L"soldier.sdkmesh", ModelLoader_IncludeBones);
+
+    DX::ThrowIfFailed(m_animation.Load(L"soldier.sdkmesh_anim"));
+    m_animation.Bind(*m_model);
+    m_drawBones = ModelBone::MakeArray(m_model->bones.size());
+
+    const auto& cull = CommonStates::CullClockwise;
 
     ResourceUploadBatch resourceUpload(device);
 
@@ -287,10 +296,12 @@ void Game::CreateDeviceDependentResources()
 // Allocate all memory resources that change on a window SizeChanged event.
 void Game::CreateWindowSizeDependentResources()
 {
-    auto size = m_deviceResources->GetOutputSize();
+    static const XMVECTORF32 c_cameraPos = { 0.f, 0.f, 1.5f, 0.f };
+    static const XMVECTORF32 c_lookAt = { 0.f, 0.25f, 0.f, 0.f };
 
-    m_view = Matrix::CreateLookAt(Vector3(2.f, 2.f, 2.f), Vector3::Zero, Vector3::UnitY);
-    m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f, float(size.right) / float(size.bottom), 0.1f, 10.f);
+    auto size = m_deviceResources->GetOutputSize();
+    m_view = Matrix::CreateLookAt(c_cameraPos.v, c_lookAt.v, Vector3::UnitY);
+    m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f, float(size.right) / float(size.bottom), 0.1f, 1000.f);
 }
 
 void Game::OnDeviceLost()
