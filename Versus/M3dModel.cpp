@@ -201,9 +201,6 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
         invBoneTransforms[j] = XMMatrixInverse(nullptr, bindPose[j]);
     }
 
-    animBones_ = ModelBone::MakeArray(bNum);
-    drawBones_ = ModelBone::MakeArray(bNum);
-
     std::swap(dxtkModel->boneMatrices, transforms);
     std::swap(dxtkModel->invBindPoseMatrices, invBoneTransforms);
 

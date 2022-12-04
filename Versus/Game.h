@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "Animation.h"
 #include "DeviceResources.h"
 #include "M3dModel.h"
 #include "StepTimer.h"
@@ -74,9 +73,6 @@ private:
     std::unique_ptr<DirectX::EffectTextureFactory> m_modelResources;
     std::unique_ptr<DirectX::Model> m_model;
     DirectX::Model::EffectCollection m_modelNormal;
-
-    DirectX::ModelBone::TransformArray m_drawBones;
-    DX::AnimationSDKMESH m_animation;
 
     M3dModel m3dModel;
 };

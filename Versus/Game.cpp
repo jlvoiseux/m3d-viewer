@@ -116,7 +116,6 @@ void Game::Update(DX::StepTimer const& timer)
     float elapsedTime = float(timer.GetElapsedSeconds());
     auto time = static_cast<float>(timer.GetTotalSeconds());
     m3dModel.UpdateAnimTime(elapsedTime*1000);
-    //m_animation.Update(elapsedTime);
     m_world = XMMatrixRotationY(time);
 
     PIXEndEvent();
@@ -147,11 +146,6 @@ void Game::Render()
 
     m3dModel.ApplyAnimToDXTKModel(*m_model);
     m_model->Draw(commandList, m_modelNormal.cbegin());
-    //m_model->DrawSkinned(commandList, m_model->bones.size(), m3dModel.GetDrawBones(), m_world, m_modelNormal.cbegin());
-
-    /*size_t nbones = m_model->bones.size();
-    m_animation.Apply(*m_model, nbones, m_drawBones.get());
-    m_model->DrawSkinned(commandList, nbones, m_drawBones.get(), m_world, m_modelNormal.cbegin());*/
 
     PIXEndEvent(commandList);
 
@@ -267,11 +261,6 @@ void Game::CreateDeviceDependentResources()
     m3dModel = M3dModel(device, L"mc.m3d");
     m_model = m3dModel.BuildDXTKModel();
 
-    /*m_model = Model::CreateFromSDKMESH(device, L"soldier.sdkmesh", ModelLoader_IncludeBones);
-    DX::ThrowIfFailed(m_animation.Load(L"soldier.sdkmesh_anim"));
-    m_animation.Bind(*m_model);
-    m_drawBones = ModelBone::MakeArray(m_model->bones.size());*/
-
     const auto& cull = CommonStates::CullClockwise;
 
     ResourceUploadBatch resourceUpload(device);
@@ -299,7 +288,7 @@ void Game::CreateDeviceDependentResources()
 // Allocate all memory resources that change on a window SizeChanged event.
 void Game::CreateWindowSizeDependentResources()
 {
-    static const XMVECTORF32 c_cameraPos = { 0.f, 0.f, 1.5f, 0.f };
+    static const XMVECTORF32 c_cameraPos = { 0.f, 0.f, 3.5f, 0.f };
     static const XMVECTORF32 c_lookAt = { 0.f, 0.25f, 0.f, 0.f };
 
     auto size = m_deviceResources->GetOutputSize();
