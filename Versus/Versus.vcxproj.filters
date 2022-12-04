@@ -14,6 +14,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{d2835540-87a8-4205-9726-82f88eb80602}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\glm">
+      <UniqueIdentifier>{fac21038-344b-4edc-8cab-7a500b836377}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StepTimer.h">
@@ -34,13 +37,16 @@
     <ClInclude Include="M3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ModelExtended.h">
+    <ClInclude Include="M3dModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BinaryReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PlatformHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Animation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -57,10 +63,13 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ModelLoadM3D.cpp">
+    <ClCompile Include="M3dModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BinaryReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Animation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

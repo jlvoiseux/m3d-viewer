@@ -85,7 +85,6 @@
 #include "GeometricPrimitive.h"
 #include "GraphicsMemory.h"
 #include "Keyboard.h"
-#include "ModelExtended.h"
 #include "Mouse.h"
 #include "PostProcess.h"
 #include "PrimitiveBatch.h"

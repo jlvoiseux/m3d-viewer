@@ -198,20 +198,22 @@
     </FXCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Animation.h" />
     <ClInclude Include="BinaryReader.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="M3d.h" />
-    <ClInclude Include="ModelExtended.h" />
+    <ClInclude Include="M3dModel.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PlatformHelpers.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="DeviceResources.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Animation.cpp" />
     <ClCompile Include="BinaryReader.cpp" />
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="ModelLoadM3D.cpp" />
+    <ClCompile Include="M3dModel.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="pch.cpp">

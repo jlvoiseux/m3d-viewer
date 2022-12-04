@@ -6,8 +6,8 @@
 
 #include "Animation.h"
 #include "DeviceResources.h"
+#include "M3dModel.h"
 #include "StepTimer.h"
-
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
@@ -78,4 +78,5 @@ private:
     DirectX::ModelBone::TransformArray m_drawBones;
     DX::AnimationSDKMESH m_animation;
 
+    M3dModel m3dModel;
 };

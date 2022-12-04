@@ -114,11 +114,10 @@ void Game::Update(DX::StepTimer const& timer)
     PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update");
 
     float elapsedTime = float(timer.GetElapsedSeconds());
-    m_animation.Update(elapsedTime);
     auto time = static_cast<float>(timer.GetTotalSeconds());
+    m3dModel.UpdateAnimTime(elapsedTime*1000);
+    //m_animation.Update(elapsedTime);
     m_world = XMMatrixRotationY(time);
-
-    elapsedTime;
 
     PIXEndEvent();
 }
@@ -141,15 +140,18 @@ void Game::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
-    size_t nbones = m_model->bones.size();
-    m_animation.Apply(*m_model, nbones, m_drawBones.get());
-
     ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
     commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
 
     Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
 
-    m_model->DrawSkinned(commandList, nbones, m_drawBones.get(), m_world, m_modelNormal.cbegin());
+    m3dModel.ApplyAnimToDXTKModel(*m_model);
+    m_model->Draw(commandList, m_modelNormal.cbegin());
+    //m_model->DrawSkinned(commandList, m_model->bones.size(), m3dModel.GetDrawBones(), m_world, m_modelNormal.cbegin());
+
+    /*size_t nbones = m_model->bones.size();
+    m_animation.Apply(*m_model, nbones, m_drawBones.get());
+    m_model->DrawSkinned(commandList, nbones, m_drawBones.get(), m_world, m_modelNormal.cbegin());*/
 
     PIXEndEvent(commandList);
 
@@ -262,12 +264,13 @@ void Game::CreateDeviceDependentResources()
 
     m_states = std::make_unique<CommonStates>(device);
 
-    m_model = ModelExtended::CreateFromM3D(device, L"mc.m3d");
-    //m_model = ModelExtended::CreateFromSDKMESH(device, L"soldier.sdkmesh", ModelLoader_IncludeBones);
+    m3dModel = M3dModel(device, L"mc.m3d");
+    m_model = m3dModel.BuildDXTKModel();
 
+    /*m_model = Model::CreateFromSDKMESH(device, L"soldier.sdkmesh", ModelLoader_IncludeBones);
     DX::ThrowIfFailed(m_animation.Load(L"soldier.sdkmesh_anim"));
     m_animation.Bind(*m_model);
-    m_drawBones = ModelBone::MakeArray(m_model->bones.size());
+    m_drawBones = ModelBone::MakeArray(m_model->bones.size());*/
 
     const auto& cull = CommonStates::CullClockwise;
 
@@ -275,7 +278,7 @@ void Game::CreateDeviceDependentResources()
 
     resourceUpload.Begin();
 
-    m_model->LoadStaticBuffers(device, resourceUpload);
+    //m_model->LoadStaticBuffers(device, resourceUpload, true);
     m_modelResources = m_model->LoadTextures(device, resourceUpload);
 
     m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
