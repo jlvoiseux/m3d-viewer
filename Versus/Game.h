@@ -5,7 +5,7 @@
 #pragma once
 
 #include "DeviceResources.h"
-#include "M3dModel.h"
+#include "PlayableCharacter.h"
 #include "StepTimer.h"
 
 // A basic game implementation that creates a D3D12 device and
@@ -67,12 +67,6 @@ private:
     DirectX::SimpleMath::Matrix m_world;
     DirectX::SimpleMath::Matrix m_view;
     DirectX::SimpleMath::Matrix m_proj;
-
-    std::unique_ptr<DirectX::CommonStates> m_states;
-    std::unique_ptr<DirectX::EffectFactory> m_fxFactory;
-    std::unique_ptr<DirectX::EffectTextureFactory> m_modelResources;
-    std::unique_ptr<DirectX::Model> m_model;
-    DirectX::Model::EffectCollection m_modelNormal;
-
-    M3dModel m3dModel;
+    
+    PlayableCharacter pc;
 };

@@ -67,6 +67,8 @@ Game::Game() noexcept(false)
     //   Add DX::DeviceResources::c_AllowTearing to opt-in to variable rate displays.
     //   Add DX::DeviceResources::c_EnableHDR for HDR10 display.
     m_deviceResources->RegisterDeviceNotify(this);
+
+    pc = PlayableCharacter(L"mc.m3d");
 }
 
 Game::~Game()
@@ -87,13 +89,6 @@ void Game::Initialize(HWND window, int width, int height)
 
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
-
-    // TODO: Change the timer settings if you want something other than the default variable timestep mode.
-    // e.g. for 60 FPS fixed timestep update logic, call:
-    /*
-    m_timer.SetFixedTimeStep(true);
-    m_timer.SetTargetElapsedSeconds(1.0 / 60);
-    */
 }
 
 #pragma region Frame Update
@@ -113,9 +108,10 @@ void Game::Update(DX::StepTimer const& timer)
 {
     PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update");
 
+    pc.Update(timer);
+
     float elapsedTime = float(timer.GetElapsedSeconds());
     auto time = static_cast<float>(timer.GetTotalSeconds());
-    m3dModel.UpdateAnimTime(elapsedTime*1000);
     m_world = XMMatrixRotationY(time);
 
     PIXEndEvent();
@@ -139,13 +135,7 @@ void Game::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
-    ID3D12DescriptorHeap* heaps[] = { m_modelResources->Heap(), m_states->Heap() };
-    commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
-
-    Model::UpdateEffectMatrices(m_modelNormal, m_world, m_view, m_proj);
-
-    m3dModel.ApplyAnimToDXTKModel(*m_model);
-    m_model->Draw(commandList, m_modelNormal.cbegin());
+    pc.Render(commandList, m_world, m_view, m_proj);
 
     PIXEndEvent(commandList);
 
@@ -224,8 +214,6 @@ void Game::OnWindowSizeChanged(int width, int height)
         return;
 
     CreateWindowSizeDependentResources();
-
-    // TODO: Game window is being resized.
 }
 
 // Properties
@@ -242,6 +230,9 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
 void Game::CreateDeviceDependentResources()
 {
     auto device = m_deviceResources->GetD3DDevice();
+    DXGI_FORMAT backBufferFormat = m_deviceResources->GetBackBufferFormat();
+    DXGI_FORMAT depthBufferFormat = m_deviceResources->GetDepthBufferFormat();
+    ID3D12CommandQueue* commandQueue = m_deviceResources->GetCommandQueue();
 
     // Check Shader Model 6 support
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { D3D_SHADER_MODEL_6_0 };
@@ -253,34 +244,9 @@ void Game::CreateDeviceDependentResources()
         throw std::runtime_error("Shader Model 6.0 is not supported!");
     }
 
-    // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory = std::make_unique<GraphicsMemory>(device);
 
-    m_states = std::make_unique<CommonStates>(device);
-
-    m3dModel = M3dModel(device, L"mc.m3d");
-    m_model = m3dModel.BuildDXTKModel();
-
-    const auto& cull = CommonStates::CullClockwise;
-
-    ResourceUploadBatch resourceUpload(device);
-
-    resourceUpload.Begin();
-
-    //m_model->LoadStaticBuffers(device, resourceUpload, true);
-    m_modelResources = m_model->LoadTextures(device, resourceUpload);
-
-    m_fxFactory = std::make_unique<EffectFactory>(m_modelResources->Heap(), m_states->Heap());
-
-    auto uploadResourcesFinished = resourceUpload.End(m_deviceResources->GetCommandQueue());
-
-    uploadResourcesFinished.wait();
-
-    RenderTargetState rtState(m_deviceResources->GetBackBufferFormat(), m_deviceResources->GetDepthBufferFormat());
-
-    EffectPipelineStateDescription pd(nullptr, CommonStates::Opaque, CommonStates::DepthDefault, CommonStates::CullClockwise, rtState);
-
-    m_modelNormal = m_model->CreateEffects(*m_fxFactory, pd, pd);
+    pc.CreateDeviceDependentResources(device, backBufferFormat, depthBufferFormat, commandQueue);
 
     m_world = Matrix::Identity;
 }
@@ -298,15 +264,12 @@ void Game::CreateWindowSizeDependentResources()
 
 void Game::OnDeviceLost()
 {
-    // TODO: Add Direct3D resource cleanup here.
 
     // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory.reset();
-    m_states.reset();
-    m_fxFactory.reset();
-    m_modelResources.reset();
-    m_model.reset();
-    m_modelNormal.clear();
+    
+    pc.OnDeviceLost();
+
 }
 
 void Game::OnDeviceRestored()
