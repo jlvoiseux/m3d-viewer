@@ -19,8 +19,8 @@ private:
     const wchar_t* name_;
     float animTime_;
     std::vector<VertexPositionNormalTexture> vertexBuffer_;
-    std::map<uint16_t, uint16_t> m3dDxtkVertexMap_;
-    std::map<uint16_t, uint16_t> m3dDxtkNormalMap_;
+    std::map<uint16_t, uint16_t> dxtkM3dVertexMap_;
+    std::map<uint16_t, uint16_t> dxtkM3dNormalMap_;
 };
 
 

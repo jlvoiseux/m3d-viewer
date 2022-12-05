@@ -288,7 +288,7 @@ void Game::CreateDeviceDependentResources()
 // Allocate all memory resources that change on a window SizeChanged event.
 void Game::CreateWindowSizeDependentResources()
 {
-    static const XMVECTORF32 c_cameraPos = { 0.f, 0.f, 3.5f, 0.f };
+    static const XMVECTORF32 c_cameraPos = { 0.f, 1.0f, 5.0f, 0.f };
     static const XMVECTORF32 c_lookAt = { 0.f, 0.25f, 0.f, 0.f };
 
     auto size = m_deviceResources->GetOutputSize();

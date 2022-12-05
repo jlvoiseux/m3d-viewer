@@ -39,6 +39,7 @@ M3dModel::M3dModel(ID3D12Device* device, const wchar_t* szFileName)
     device_ = device;
     m3dModel_ = new M3D::Model(buffer, NULL, NULL);
     name_ = szFileName;
+    animTime_ = 0;
 }
 
 std::unique_ptr<Model> M3dModel::BuildDXTKModel()
@@ -89,16 +90,13 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
         dxtkModel->textureNames[static_cast<size_t>(texture->second)] = texture->first;
     }
 
-    const size_t vNum = m3dVerts.size();
     const size_t stride = sizeof(VertexPositionNormalTexture);
-    const size_t tNum = m3dTris.size();
 
     part->materialIndex = 0;
-    part->indexCount = tNum * 3; // Each triangle has 3 vertices
+
     part->startIndex = 0;
     part->vertexOffset = 0;
     part->vertexStride = static_cast<UINT>(stride);
-    part->vertexCount = vNum;
     part->indexFormat = DXGI_FORMAT_R16_UINT;
 
     // Vertex buffer
@@ -132,20 +130,24 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
                 indices.push_back(newIndex);
                 vertexBuffer_.push_back(vertexData);
                 m3dVertIndexMap[vertexDataKey] = newIndex;
-                m3dDxtkVertexMap_[newIndex] = currVert;
-                m3dDxtkNormalMap_[newIndex] = currNorm;
+                dxtkM3dVertexMap_[newIndex] = currVert;
+                dxtkM3dNormalMap_[newIndex] = currNorm;
             }
             else {
                 indices.push_back(mapIt->second);
             }
         }
     }
-    part->indexBufferSize = tNum * 6; // Each triangle has 3 vertices stored in 2 bytes
     part->vertexBufferSize = stride * vertexBuffer_.size();
-    part->indexBuffer = GraphicsMemory::Get(device_).Allocate(part->indexBufferSize);
-    memcpy(part->indexBuffer.Memory(), indices.data(), part->indexBufferSize);
+    part->vertexCount = vertexBuffer_.size();
     part->vertexBuffer = GraphicsMemory::Get(device_).Allocate(part->vertexBufferSize);
     memcpy(part->vertexBuffer.Memory(), vertexBuffer_.data(), part->vertexBufferSize);
+
+    part->indexBufferSize = indices.size() * 2; // Each index is stored in 2 bytes
+    part->indexCount = indices.size();
+    part->indexBuffer = GraphicsMemory::Get(device_).Allocate(part->indexBufferSize);
+    memcpy(part->indexBuffer.Memory(), indices.data(), part->indexBufferSize);
+    
 
     part->vbDecl = std::make_shared<ModelMeshPart::InputLayoutCollection>(VertexPositionNormalTexture::InputLayout.pInputElementDescs,
         VertexPositionNormalTexture::InputLayout.pInputElementDescs + VertexPositionNormalTexture::InputLayout.NumElements);
@@ -221,39 +223,45 @@ void M3dModel::ApplyAnimToDXTKModel(const DirectX::Model& dxtkModel)
     std::vector<m3db_t> animPose = m3dModel->getActionPose(1, animTime_);
 
     // Convert mesh vertices from bind pose to animation pose
-    m3dv_t tmp1, tmp2;
     std::vector<VertexPositionNormalTexture> vbo = vertexBuffer_;
     std::vector<m3ds_t> m3dSkin = m3dModel->getSkin();
     int count = 0;
     for (auto it = begin(vbo); it != end(vbo); ++it) {
-        m3dv_t currVert = m3dVerts[m3dDxtkVertexMap_[count]];
-        m3dv_t currNorm = m3dVerts[m3dDxtkNormalMap_[count]];
+        m3dv_t currVert = m3dVerts[dxtkM3dVertexMap_[count]];
+        m3dv_t currNorm = m3dVerts[dxtkM3dNormalMap_[count]];
         m3ds_t currSkin = m3dSkin[currVert.skinid];
         if (currVert.skinid != -1U) {
             for (int i = 0; i < M3D_NUMBONE && currSkin.weight[i] > 0.0; i++) {
-                XMFLOAT4X4 currBoneBindPoseTransformMatrix = XMFLOAT4X4(bindPose[currSkin.boneid[i]].mat4);
-                XMFLOAT4X4 currBoneAnimPoseTransformMatrix = XMFLOAT4X4(animPose[currSkin.boneid[i]].mat4);
+                XMFLOAT4X4 bindPoseMatrixInit = XMFLOAT4X4(bindPose[currSkin.boneid[i]].mat4);
+                XMFLOAT4X4 animPoseMatrixInit = XMFLOAT4X4(animPose[currSkin.boneid[i]].mat4);
+                // XMFLOAT4X4 is row-major, whereas out matrices are column-major -> transpose required
+                // https://learn.microsoft.com/en-us/windows/win32/api/directxmath/nf-directxmath-xmloadfloat4x4
+                XMMATRIX bindPoseMatrix = XMMatrixTranspose(XMLoadFloat4x4(&bindPoseMatrixInit));
+                XMMATRIX animPoseMatrix = XMMatrixTranspose(XMLoadFloat4x4(&animPoseMatrixInit));
+
                 // POSITION
+                XMFLOAT4 currVertInit = XMFLOAT4(currVert.x, currVert.y, currVert.z, 1.0f);
+                XMFLOAT4 currVertUpdated;
                 // Convert bind-pose from model-space to bone-local space
-                XMFLOAT4 currVertexBindPoseModelSpace = XMFLOAT4(currVert.x, currVert.y, currVert.z, 1.0);
-                XMVECTOR currVertexBindPoseBoneSpace = XMVector4Transform(XMLoadFloat4(&currVertexBindPoseModelSpace), XMLoadFloat4x4(&currBoneBindPoseTransformMatrix));
+                XMVECTOR vertBindPoseBoneSpace = XMVector4Transform(XMLoadFloat4(&currVertInit), bindPoseMatrix);
                 // Then convert from bone-local space into animation-pose model-space
-                XMVECTOR currVertexAnimPoseModelSpace = XMVector4Transform(currVertexBindPoseBoneSpace, XMLoadFloat4x4(&currBoneAnimPoseTransformMatrix));
+                XMStoreFloat4(&currVertUpdated, XMVector4Transform(vertBindPoseBoneSpace, animPoseMatrix));
                 // Multiply with weight and accumulate
-                it->position.x += currVertexAnimPoseModelSpace.m128_f32[0] * currSkin.weight[i];
-                it->position.y += currVertexAnimPoseModelSpace.m128_f32[1] * currSkin.weight[i];
-                it->position.z += currVertexAnimPoseModelSpace.m128_f32[2] * currSkin.weight[i];
+                it->position.x += currVertUpdated.x * currSkin.weight[i];
+                it->position.y += currVertUpdated.y * currSkin.weight[i];
+                it->position.z += currVertUpdated.z * currSkin.weight[i];
 
                 // NORMAL
+                XMFLOAT4 currNormInit = XMFLOAT4(currNorm.x, currNorm.y, currNorm.z, 1.0f);
+                XMFLOAT4 currNormUpdated;
                 // Convert bind-pose from model-space to bone-local space
-                XMFLOAT4 currNormalBindPoseModelSpace = XMFLOAT4(currNorm.x, currNorm.y, currNorm.z, 1.0);
-                XMVECTOR currNormalBindPoseBoneSpace = XMVector4Transform(XMLoadFloat4(&currNormalBindPoseModelSpace), XMLoadFloat4x4(&currBoneBindPoseTransformMatrix));
+                XMVECTOR normBindPoseBoneSpace = XMVector4Transform(XMLoadFloat4(&currNormInit), bindPoseMatrix);
                 // Then convert from bone-local space into animation-pose model-space
-                XMVECTOR currNormalAnimPoseModelSpace = XMVector4Transform(currNormalBindPoseBoneSpace, XMLoadFloat4x4(&currBoneAnimPoseTransformMatrix));
+                XMStoreFloat4(&currNormUpdated, XMVector4Transform(vertBindPoseBoneSpace, animPoseMatrix));
                 // Multiply with weight and accumulate
-                it->normal.x += currNormalAnimPoseModelSpace.m128_f32[0] * currSkin.weight[i];
-                it->normal.y += currNormalAnimPoseModelSpace.m128_f32[1] * currSkin.weight[i];
-                it->normal.z += currNormalAnimPoseModelSpace.m128_f32[2] * currSkin.weight[i];
+                it->normal.x += currNormUpdated.x * currSkin.weight[i];
+                it->normal.y += currNormUpdated.y * currSkin.weight[i];
+                it->normal.z += currNormUpdated.z * currSkin.weight[i];
             }
         }
         count++;
