@@ -24,7 +24,7 @@ public:
     Game& operator= (Game const&) = delete;
 
     // Initialization and management
-    void Initialize(HWND window, int width, int height);
+    std::unique_ptr<DX::DeviceResources>& Initialize(HWND window, int width, int height);
 
     // Basic game loop
     void Tick();
@@ -61,7 +61,6 @@ private:
     // Rendering loop timer.
     DX::StepTimer                               m_timer;
 
-    // If using the DirectX Tool Kit for DX12, uncomment this line:
     std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
 
     DirectX::SimpleMath::Matrix m_world;

@@ -4,6 +4,9 @@
 
 #include "pch.h"
 #include "Game.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx12.h"
 
 extern void ExitGame() noexcept;
 
@@ -80,7 +83,7 @@ Game::~Game()
 }
 
 // Initialize the Direct3D resources required to run.
-void Game::Initialize(HWND window, int width, int height)
+std::unique_ptr<DX::DeviceResources>& Game::Initialize(HWND window, int width, int height)
 {
     m_deviceResources->SetWindow(window, width, height);
 
@@ -89,6 +92,8 @@ void Game::Initialize(HWND window, int width, int height)
 
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
+    
+    return m_deviceResources;
 }
 
 #pragma region Frame Update
@@ -135,6 +140,24 @@ void Game::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
+    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+    ImGui::Begin("Hello, world!");
+    ImGui::End();
+
+    ImGui::Render();
+
+    ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    const float clear_color_with_alpha[4] = { clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w };
+    auto srvDh = m_deviceResources->GetD3DDescriptorHeap();
+	auto targetView = m_deviceResources->GetRenderTargetView();
+	auto stencilView = m_deviceResources->GetDepthStencilView();
+    commandList->ClearRenderTargetView(targetView, clear_color_with_alpha, 0, NULL);
+	commandList->OMSetRenderTargets(1, &targetView, FALSE, &stencilView);
+    commandList->SetDescriptorHeaps(1, &srvDh);
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+    
     pc.Render(commandList, m_world, m_view, m_proj);
 
     PIXEndEvent(commandList);
@@ -147,6 +170,7 @@ void Game::Render()
     m_graphicsMemory->Commit(m_deviceResources->GetCommandQueue());
 
     PIXEndEvent();
+
 }
 
 // Helper method to clear the back buffers.

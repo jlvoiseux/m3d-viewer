@@ -5,6 +5,10 @@
 #include "pch.h"
 #include "Game.h"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx12.h"
+
 using namespace DirectX;
 
 #ifdef __clang__
@@ -87,13 +91,28 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
             return 1;
 
         ShowWindow(hwnd, nCmdShow);
+        UpdateWindow(hwnd);
         // TODO: Change nCmdShow to SW_SHOWMAXIMIZED to default to fullscreen.
 
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(g_game.get()));
 
         GetClientRect(hwnd, &rc);
 
-        g_game->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
+        std::unique_ptr<DX::DeviceResources>& deviceResources = g_game->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
+
+        // Imgui setup
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        ImGui::StyleColorsLight();
+
+        // Imgui setup for DirectX 12
+		auto device = deviceResources->GetD3DDevice();
+		auto descriptorHeap = deviceResources->GetD3DDescriptorHeap();
+        ImGui_ImplWin32_Init(hwnd);
+        ImGui_ImplDX12_Init(device, 3, DXGI_FORMAT_R8G8B8A8_UNORM, descriptorHeap,
+            descriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+            descriptorHeap->GetGPUDescriptorHandleForHeapStart());
     }
 
     // Main message loop
@@ -116,9 +135,14 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     return static_cast<int>(msg.wParam);
 }
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 // Windows procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+    
     static bool s_in_sizemove = false;
     static bool s_in_suspend = false;
     static bool s_minimized = false;

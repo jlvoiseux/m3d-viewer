@@ -236,6 +236,15 @@ void DeviceResources::CreateDeviceResources()
         m_dsvDescriptorHeap->SetName(L"DeviceResources");
     }
 
+    D3D12_DESCRIPTOR_HEAP_DESC srvDescriptorHeapDesc = {};
+    srvDescriptorHeapDesc.NumDescriptors = 1;
+    srvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    srvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+    ThrowIfFailed(m_d3dDevice->CreateDescriptorHeap(&srvDescriptorHeapDesc, IID_PPV_ARGS(m_srvDescriptorHeap.ReleaseAndGetAddressOf())));
+
+    m_srvDescriptorHeap->SetName(L"DeviceResources");
+
     // Create a command allocator for each back buffer that will be rendered to.
     for (UINT n = 0; n < m_backBufferCount; n++)
     {
