@@ -12,11 +12,11 @@
 #define M3D_CPPWRAPPER
 #define M3D_IMPLEMENTATION
 #include "M3d.h"
-#include <iostream>
 
 #define MAX_MESH_NAME 100
 
 using namespace DirectX;
+using namespace std::filesystem;
 
 std::wstring StringToWString(std::string input)
 {
@@ -38,7 +38,10 @@ M3dModel::M3dModel(ID3D12Device* device, const wchar_t* szFileName)
     std::vector<unsigned char> buffer(meshData, meshData + dataSize);
     device_ = device;
     m3dModel_ = new M3D::Model(buffer, NULL, NULL);
-    name_ = szFileName;
+    
+	path modelPath(szFileName);
+    name_ = modelPath.filename().wstring();
+    containing_dir_ = modelPath.parent_path().wstring() + L"\\";
     animTime_ = 0;
 }
 
@@ -76,11 +79,11 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
     dxtkModel->materials = std::move(materials);
 
     std::map<std::wstring, int> textureDictionary;
-    const std::string fileFormat = ".png";
+    const std::wstring fileFormat = L".png";
     int texCount = 0;
     for (auto it = begin(m3dTextures); it != end(m3dTextures); ++it) {
-        std::string texName = it->name + fileFormat;
-        std::wstring wTexName = StringToWString(texName);
+        std::wstring texName = StringToWString(it->name) + fileFormat;
+        std::wstring wTexName = containing_dir_ + texName;
         textureDictionary[wTexName] = texCount;
         texCount++;
     }

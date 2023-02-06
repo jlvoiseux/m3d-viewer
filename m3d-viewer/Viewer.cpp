@@ -71,7 +71,7 @@ Viewer::Viewer() noexcept(false)
     //   Add DX::DeviceResources::c_EnableHDR for HDR10 display.
     m_deviceResources->RegisterDeviceNotify(this);
 
-    pc = ViewerModel(L"mc.m3d");
+    pc = ViewerModel(L"models/bird.m3d");
 }
 
 Viewer::~Viewer()

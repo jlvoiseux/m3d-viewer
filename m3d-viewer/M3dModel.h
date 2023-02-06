@@ -1,6 +1,9 @@
 #pragma once
 #include <memory>
+#include <iostream>
+#include <string>
 #include "Model.h"
+
 
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
@@ -16,7 +19,8 @@ public:
 private:
     ID3D12Device* device_;
     void* m3dModel_;
-    const wchar_t* name_;
+    std::wstring name_;
+	std::wstring containing_dir_;
     float animTime_;
     std::vector<VertexPositionNormalTexture> vertexBuffer_;
     std::map<uint16_t, uint16_t> dxtkM3dVertexMap_;

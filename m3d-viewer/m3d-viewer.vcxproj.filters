@@ -17,6 +17,9 @@
     <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{14461730-5cd7-49e2-a3b6-f4794c677082}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Models">
+      <UniqueIdentifier>{bccb11f0-b6ad-4584-899d-9754d774c2ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Viewer.h">
@@ -156,6 +159,12 @@
     </None>
     <None Include="mc.mtl">
       <Filter>Assets</Filter>
+    </None>
+    <None Include="models\bird.m3d">
+      <Filter>Models</Filter>
+    </None>
+    <None Include="models\skeleton.m3d">
+      <Filter>Models</Filter>
     </None>
   </ItemGroup>
 </Project>

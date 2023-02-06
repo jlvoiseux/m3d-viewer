@@ -62,7 +62,9 @@
 #include <cstring>
 #include <cwchar>
 #include <exception>
+#include <filesystem>
 #include <iterator>
+#include <iostream>
 #include <limits>
 #include <locale>
 #include <map>

@@ -14,13 +14,21 @@ void ViewerModel::Update(DX::StepTimer const& timer)
 
 void ViewerModel::Render(ID3D12GraphicsCommandList* commandList, Matrix world, Matrix view, Matrix proj)
 {
-    ID3D12DescriptorHeap* heaps[] = { dxtkModelResources_->Heap(), dxtkStates_->Heap() };
-    commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
-
-    Model::UpdateEffectMatrices(dxtkModelNormal_, world, view, proj);
-
-    m3dModel_.ApplyAnimToDXTKModel(*dxtkModel_);
-    dxtkModel_->Draw(commandList, dxtkModelNormal_.cbegin());
+    if (!dxtkModel_->textureNames.empty()) {
+        ID3D12DescriptorHeap* heaps[] = { dxtkModelResources_->Heap(), dxtkStates_->Heap() };
+        commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+        Model::UpdateEffectMatrices(dxtkModelNormal_, world, view, proj);
+        m3dModel_.ApplyAnimToDXTKModel(*dxtkModel_);
+        dxtkModel_->Draw(commandList, dxtkModelNormal_.cbegin());
+    }
+    else {
+		dxtkBasic->SetWorld(world);
+		dxtkBasic->SetView(view);
+		dxtkBasic->SetProjection(proj);
+        m3dModel_.ApplyAnimToDXTKModel(*dxtkModel_);
+        dxtkBasic->Apply(commandList);
+        dxtkModel_->Draw(commandList);
+    }
 }
 
 void ViewerModel::CreateDeviceDependentResources(ID3D12Device* device, DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, ID3D12CommandQueue* commandQueue)
@@ -29,19 +37,23 @@ void ViewerModel::CreateDeviceDependentResources(ID3D12Device* device, DXGI_FORM
     dxtkStates_ = std::make_unique<CommonStates>(device);
     ResourceUploadBatch resourceUpload(device);
     RenderTargetState rtState(backBufferFormat, depthBufferFormat);
-    EffectPipelineStateDescription pd(nullptr, CommonStates::Opaque, CommonStates::DepthDefault, CommonStates::CullClockwise, rtState);
 
-    m3dModel_ = M3dModel(device, L"mc.m3d");
+    m3dModel_ = M3dModel(device, m3dPath_);
     dxtkModel_ = m3dModel_.BuildDXTKModel();
-
-    resourceUpload.Begin();
-    //m_model->LoadStaticBuffers(device, resourceUpload, true);
-    dxtkModelResources_ = dxtkModel_->LoadTextures(device, resourceUpload);
-    dxtkFxFactory_ = std::make_unique<EffectFactory>(dxtkModelResources_->Heap(), dxtkStates_->Heap());
-    auto uploadResourcesFinished = resourceUpload.End(commandQueue);
-    uploadResourcesFinished.wait();
-
-    dxtkModelNormal_ = dxtkModel_->CreateEffects(*dxtkFxFactory_, pd, pd);
+    if (!dxtkModel_->textureNames.empty())
+    {
+        EffectPipelineStateDescription pd(nullptr, CommonStates::Opaque, CommonStates::DepthDefault, CommonStates::CullClockwise, rtState);
+        resourceUpload.Begin();
+        dxtkModelResources_ = dxtkModel_->LoadTextures(device, resourceUpload);
+        dxtkFxFactory_ = std::make_unique<EffectFactory>(dxtkModelResources_->Heap(), dxtkStates_->Heap());
+        auto uploadResourcesFinished = resourceUpload.End(commandQueue);
+        uploadResourcesFinished.wait();
+        dxtkModelNormal_ = dxtkModel_->CreateEffects(*dxtkFxFactory_, pd, pd);
+    }
+    else {
+        EffectPipelineStateDescription pd(&VertexPositionNormalTexture::InputLayout, CommonStates::AlphaBlend, CommonStates::DepthDefault, CommonStates::CullClockwise, rtState);
+        dxtkBasic = std::make_unique<BasicEffect>(device, EffectFlags::Lighting, pd);
+    }
 }
 
 void ViewerModel::OnDeviceLost()
@@ -51,4 +63,5 @@ void ViewerModel::OnDeviceLost()
 	dxtkModelResources_.reset();
 	dxtkModel_.reset();
 	dxtkModelNormal_.clear();
+	dxtkBasic.reset();
 }

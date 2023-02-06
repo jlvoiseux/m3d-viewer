@@ -3,6 +3,7 @@
 #include "StepTimer.h"
 #include "DeviceResources.h"
 #include "SimpleMath.h"
+#include <Effects.h>
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -25,4 +26,5 @@ private:
     DirectX::Model::EffectCollection dxtkModelNormal_;
     std::unique_ptr<DirectX::EffectTextureFactory> dxtkModelResources_;
     std::unique_ptr<DirectX::EffectFactory> dxtkFxFactory_;
+    std::unique_ptr<BasicEffect> dxtkBasic;
 };
