@@ -148,17 +148,17 @@ void Game::Render()
 
     ImGui::Render();
 
-    ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    const float clear_color_with_alpha[4] = { clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w };
+    pc.Render(commandList, m_world, m_view, m_proj);
+
     auto srvDh = m_deviceResources->GetD3DDescriptorHeap();
 	auto targetView = m_deviceResources->GetRenderTargetView();
 	auto stencilView = m_deviceResources->GetDepthStencilView();
-    commandList->ClearRenderTargetView(targetView, clear_color_with_alpha, 0, NULL);
 	commandList->OMSetRenderTargets(1, &targetView, FALSE, &stencilView);
     commandList->SetDescriptorHeaps(1, &srvDh);
+
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
     
-    pc.Render(commandList, m_world, m_view, m_proj);
+    
 
     PIXEndEvent(commandList);
 
