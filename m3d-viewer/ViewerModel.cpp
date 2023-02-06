@@ -1,18 +1,18 @@
 #include "pch.h"
-#include "PlayableCharacter.h"
+#include "ViewerModel.h"
 
-PlayableCharacter::PlayableCharacter(const wchar_t* m3dPath)
+ViewerModel::ViewerModel(const wchar_t* m3dPath)
 {
 	m3dPath_ = m3dPath;
 }
 
-void PlayableCharacter::Update(DX::StepTimer const& timer)
+void ViewerModel::Update(DX::StepTimer const& timer)
 {
     float elapsedTime = float(timer.GetElapsedSeconds());
     m3dModel_.UpdateAnimTime(elapsedTime * 1000);
 }
 
-void PlayableCharacter::Render(ID3D12GraphicsCommandList* commandList, Matrix world, Matrix view, Matrix proj)
+void ViewerModel::Render(ID3D12GraphicsCommandList* commandList, Matrix world, Matrix view, Matrix proj)
 {
     ID3D12DescriptorHeap* heaps[] = { dxtkModelResources_->Heap(), dxtkStates_->Heap() };
     commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
@@ -23,7 +23,7 @@ void PlayableCharacter::Render(ID3D12GraphicsCommandList* commandList, Matrix wo
     dxtkModel_->Draw(commandList, dxtkModelNormal_.cbegin());
 }
 
-void PlayableCharacter::CreateDeviceDependentResources(ID3D12Device* device, DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, ID3D12CommandQueue* commandQueue)
+void ViewerModel::CreateDeviceDependentResources(ID3D12Device* device, DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, ID3D12CommandQueue* commandQueue)
 {
     const auto& cull = CommonStates::CullClockwise;
     dxtkStates_ = std::make_unique<CommonStates>(device);
@@ -44,7 +44,7 @@ void PlayableCharacter::CreateDeviceDependentResources(ID3D12Device* device, DXG
     dxtkModelNormal_ = dxtkModel_->CreateEffects(*dxtkFxFactory_, pd, pd);
 }
 
-void PlayableCharacter::OnDeviceLost()
+void ViewerModel::OnDeviceLost()
 {
     dxtkStates_.reset();
 	dxtkFxFactory_.reset();

@@ -8,11 +8,11 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
 
-class PlayableCharacter {
+class ViewerModel {
 
 public:
-    PlayableCharacter() = default;
-    PlayableCharacter(const wchar_t* m3dPath);
+    ViewerModel() = default;
+    ViewerModel(const wchar_t* m3dPath);
     void Update(DX::StepTimer const& timer);
     void Render(ID3D12GraphicsCommandList* commandList, Matrix world, Matrix view, Matrix proj);
     void CreateDeviceDependentResources(ID3D12Device* device, DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, ID3D12CommandQueue* commandQueue);

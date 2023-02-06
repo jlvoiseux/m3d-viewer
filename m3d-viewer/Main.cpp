@@ -3,7 +3,7 @@
 //
 
 #include "pch.h"
-#include "Game.h"
+#include "Viewer.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -29,13 +29,13 @@ extern "C"
 
 namespace
 {
-    std::unique_ptr<Game> g_game;
+    std::unique_ptr<Viewer> g_viewer;
 }
 
 LPCWSTR g_szAppName = L"m3d-viewer";
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-void ExitGame() noexcept;
+void ExitViewer() noexcept;
 
 // Entry point
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -55,7 +55,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 1;
 #endif
 
-    g_game = std::make_unique<Game>();
+    g_viewer = std::make_unique<Viewer>();
 
     // Register class and create window
     {
@@ -75,7 +75,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
         // Create window
         int w, h;
-        g_game->GetDefaultSize(w, h);
+        g_viewer->GetDefaultSize(w, h);
 
         RECT rc = { 0, 0, static_cast<LONG>(w), static_cast<LONG>(h) };
 
@@ -94,11 +94,11 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         UpdateWindow(hwnd);
         // TODO: Change nCmdShow to SW_SHOWMAXIMIZED to default to fullscreen.
 
-        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(g_game.get()));
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(g_viewer.get()));
 
         GetClientRect(hwnd, &rc);
 
-        std::unique_ptr<DX::DeviceResources>& deviceResources = g_game->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
+        std::unique_ptr<DX::DeviceResources>& deviceResources = g_viewer->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
 
         // Imgui setup
         IMGUI_CHECKVERSION();
@@ -126,11 +126,11 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         }
         else
         {
-            g_game->Tick();
+            g_viewer->Tick();
         }
     }
 
-    g_game.reset();
+    g_viewer.reset();
 
     return static_cast<int>(msg.wParam);
 }
@@ -149,14 +149,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     static bool s_fullscreen = false;
     // TODO: Set s_fullscreen to true if defaulting to fullscreen.
 
-    auto game = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+    auto viewer = reinterpret_cast<Viewer*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
     switch (message)
     {
     case WM_PAINT:
-        if (s_in_sizemove && game)
+        if (s_in_sizemove && viewer)
         {
-            game->Tick();
+            viewer->Tick();
         }
         else
         {
@@ -167,16 +167,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_DISPLAYCHANGE:
-        if (game)
+        if (viewer)
         {
-            game->OnDisplayChange();
+            viewer->OnDisplayChange();
         }
         break;
 
     case WM_MOVE:
-        if (game)
+        if (viewer)
         {
-            game->OnWindowMoved();
+            viewer->OnWindowMoved();
         }
         break;
 
@@ -186,21 +186,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (!s_minimized)
             {
                 s_minimized = true;
-                if (!s_in_suspend && game)
-                    game->OnSuspending();
+                if (!s_in_suspend && viewer)
+                    viewer->OnSuspending();
                 s_in_suspend = true;
             }
         }
         else if (s_minimized)
         {
             s_minimized = false;
-            if (s_in_suspend && game)
-                game->OnResuming();
+            if (s_in_suspend && viewer)
+                viewer->OnResuming();
             s_in_suspend = false;
         }
-        else if (!s_in_sizemove && game)
+        else if (!s_in_sizemove && viewer)
         {
-            game->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
+            viewer->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
         }
         break;
 
@@ -210,12 +210,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_EXITSIZEMOVE:
         s_in_sizemove = false;
-        if (game)
+        if (viewer)
         {
             RECT rc;
             GetClientRect(hWnd, &rc);
 
-            game->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
+            viewer->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
         }
         break;
 
@@ -229,15 +229,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_ACTIVATEAPP:
-        if (game)
+        if (viewer)
         {
             if (wParam)
             {
-                game->OnActivated();
+                viewer->OnActivated();
             }
             else
             {
-                game->OnDeactivated();
+                viewer->OnDeactivated();
             }
         }
         break;
@@ -246,16 +246,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wParam)
         {
         case PBT_APMQUERYSUSPEND:
-            if (!s_in_suspend && game)
-                game->OnSuspending();
+            if (!s_in_suspend && viewer)
+                viewer->OnSuspending();
             s_in_suspend = true;
             return TRUE;
 
         case PBT_APMRESUMESUSPEND:
             if (!s_minimized)
             {
-                if (s_in_suspend && game)
-                    game->OnResuming();
+                if (s_in_suspend && viewer)
+                    viewer->OnResuming();
                 s_in_suspend = false;
             }
             return TRUE;
@@ -277,8 +277,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 int width = 800;
                 int height = 600;
-                if (game)
-                    game->GetDefaultSize(width, height);
+                if (viewer)
+                    viewer->GetDefaultSize(width, height);
 
                 ShowWindow(hWnd, SW_SHOWNORMAL);
 
@@ -308,7 +308,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 // Exit helper
-void ExitGame() noexcept
+void ExitViewer() noexcept
 {
     PostQuitMessage(0);
 }

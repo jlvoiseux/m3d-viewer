@@ -3,12 +3,12 @@
 //
 
 #include "pch.h"
-#include "Game.h"
+#include "Viewer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
 
-extern void ExitGame() noexcept;
+extern void ExitViewer() noexcept;
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -58,7 +58,7 @@ static std::wstring GetLatestWinPixGpuCapturerPath()
     return &output[0];
 }
 
-Game::Game() noexcept(false)
+Viewer::Viewer() noexcept(false)
 {
     if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
     {
@@ -71,10 +71,10 @@ Game::Game() noexcept(false)
     //   Add DX::DeviceResources::c_EnableHDR for HDR10 display.
     m_deviceResources->RegisterDeviceNotify(this);
 
-    pc = PlayableCharacter(L"mc.m3d");
+    pc = ViewerModel(L"mc.m3d");
 }
 
-Game::~Game()
+Viewer::~Viewer()
 {
     if (m_deviceResources)
     {
@@ -83,7 +83,7 @@ Game::~Game()
 }
 
 // Initialize the Direct3D resources required to run.
-std::unique_ptr<DX::DeviceResources>& Game::Initialize(HWND window, int width, int height)
+std::unique_ptr<DX::DeviceResources>& Viewer::Initialize(HWND window, int width, int height)
 {
     m_deviceResources->SetWindow(window, width, height);
 
@@ -98,7 +98,7 @@ std::unique_ptr<DX::DeviceResources>& Game::Initialize(HWND window, int width, i
 
 #pragma region Frame Update
 // Executes the basic game loop.
-void Game::Tick()
+void Viewer::Tick()
 {
     m_timer.Tick([&]()
     {
@@ -109,7 +109,7 @@ void Game::Tick()
 }
 
 // Updates the world.
-void Game::Update(DX::StepTimer const& timer)
+void Viewer::Update(DX::StepTimer const& timer)
 {
     PIXBeginEvent(PIX_COLOR_DEFAULT, L"Update");
 
@@ -125,7 +125,7 @@ void Game::Update(DX::StepTimer const& timer)
 
 #pragma region Frame Render
 // Draws the scene.
-void Game::Render()
+void Viewer::Render()
 {
     // Don't try to render anything before the first Update.
     if (m_timer.GetFrameCount() == 0)
@@ -158,8 +158,6 @@ void Game::Render()
 
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
     
-    
-
     PIXEndEvent(commandList);
 
     // Show the new frame.
@@ -174,7 +172,7 @@ void Game::Render()
 }
 
 // Helper method to clear the back buffers.
-void Game::Clear()
+void Viewer::Clear()
 {
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Clear");
@@ -199,40 +197,40 @@ void Game::Clear()
 
 #pragma region Message Handlers
 // Message handlers
-void Game::OnActivated()
+void Viewer::OnActivated()
 {
-    // TODO: Game is becoming active window.
+    // TODO: Viewer is becoming active window.
 }
 
-void Game::OnDeactivated()
+void Viewer::OnDeactivated()
 {
-    // TODO: Game is becoming background window.
+    // TODO: Viewer is becoming background window.
 }
 
-void Game::OnSuspending()
+void Viewer::OnSuspending()
 {
-    // TODO: Game is being power-suspended (or minimized).
+    // TODO: Viewer is being power-suspended (or minimized).
 }
 
-void Game::OnResuming()
+void Viewer::OnResuming()
 {
     m_timer.ResetElapsedTime();
 
     // TODO: Game is being power-resumed (or returning from minimize).
 }
 
-void Game::OnWindowMoved()
+void Viewer::OnWindowMoved()
 {
     auto const r = m_deviceResources->GetOutputSize();
     m_deviceResources->WindowSizeChanged(r.right, r.bottom);
 }
 
-void Game::OnDisplayChange()
+void Viewer::OnDisplayChange()
 {
     m_deviceResources->UpdateColorSpace();
 }
 
-void Game::OnWindowSizeChanged(int width, int height)
+void Viewer::OnWindowSizeChanged(int width, int height)
 {
     if (!m_deviceResources->WindowSizeChanged(width, height))
         return;
@@ -241,7 +239,7 @@ void Game::OnWindowSizeChanged(int width, int height)
 }
 
 // Properties
-void Game::GetDefaultSize(int& width, int& height) const noexcept
+void Viewer::GetDefaultSize(int& width, int& height) const noexcept
 {
     // TODO: Change to desired default window size (note minimum size is 320x200).
     width = 800;
@@ -251,7 +249,7 @@ void Game::GetDefaultSize(int& width, int& height) const noexcept
 
 #pragma region Direct3D Resources
 // These are the resources that depend on the device.
-void Game::CreateDeviceDependentResources()
+void Viewer::CreateDeviceDependentResources()
 {
     auto device = m_deviceResources->GetD3DDevice();
     DXGI_FORMAT backBufferFormat = m_deviceResources->GetBackBufferFormat();
@@ -276,7 +274,7 @@ void Game::CreateDeviceDependentResources()
 }
 
 // Allocate all memory resources that change on a window SizeChanged event.
-void Game::CreateWindowSizeDependentResources()
+void Viewer::CreateWindowSizeDependentResources()
 {
     static const XMVECTORF32 c_cameraPos = { 0.f, 1.0f, 5.0f, 0.f };
     static const XMVECTORF32 c_lookAt = { 0.f, 0.25f, 0.f, 0.f };
@@ -286,7 +284,7 @@ void Game::CreateWindowSizeDependentResources()
     m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f, float(size.right) / float(size.bottom), 0.1f, 1000.f);
 }
 
-void Game::OnDeviceLost()
+void Viewer::OnDeviceLost()
 {
 
     // If using the DirectX Tool Kit for DX12, uncomment this line:
@@ -296,7 +294,7 @@ void Game::OnDeviceLost()
 
 }
 
-void Game::OnDeviceRestored()
+void Viewer::OnDeviceRestored()
 {
     CreateDeviceDependentResources();
 

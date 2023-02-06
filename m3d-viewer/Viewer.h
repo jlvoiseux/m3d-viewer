@@ -5,23 +5,23 @@
 #pragma once
 
 #include "DeviceResources.h"
-#include "PlayableCharacter.h"
+#include "ViewerModel.h"
 #include "StepTimer.h"
 
 // A basic game implementation that creates a D3D12 device and
 // provides a game loop.
-class Game final : public DX::IDeviceNotify
+class Viewer final : public DX::IDeviceNotify
 {
 public:
 
-    Game() noexcept(false);
-    ~Game();
+    Viewer() noexcept(false);
+    ~Viewer();
 
-    Game(Game&&) = default;
-    Game& operator= (Game&&) = default;
+    Viewer(Viewer&&) = default;
+    Viewer& operator= (Viewer&&) = default;
 
-    Game(Game const&) = delete;
-    Game& operator= (Game const&) = delete;
+    Viewer(Viewer const&) = delete;
+    Viewer& operator= (Viewer const&) = delete;
 
     // Initialization and management
     std::unique_ptr<DX::DeviceResources>& Initialize(HWND window, int width, int height);
@@ -67,5 +67,5 @@ private:
     DirectX::SimpleMath::Matrix m_view;
     DirectX::SimpleMath::Matrix m_proj;
     
-    PlayableCharacter pc;
+    ViewerModel pc;
 };

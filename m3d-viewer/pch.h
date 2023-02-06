@@ -189,4 +189,3 @@ inline void PIXEndEvent(T*) {}
 // then add the NuGet package WinPixEventRuntime to the project.
 #include <pix.h>
 #endif
-
