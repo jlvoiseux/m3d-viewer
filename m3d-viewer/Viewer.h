@@ -24,7 +24,7 @@ public:
     Viewer& operator= (Viewer const&) = delete;
 
     // Initialization and management
-    std::unique_ptr<DX::DeviceResources>& Initialize(HWND window, int width, int height);
+    std::unique_ptr<DX::DeviceResources>& Initialize(HWND window, int width, int height, const wchar_t* modelPath);
 
     // Basic game loop
     void Tick();
@@ -63,9 +63,18 @@ private:
 
     std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
 
+    std::unique_ptr<DirectX::Keyboard> m_keyboard;
+    std::unique_ptr<DirectX::Mouse> m_mouse;
+    DirectX::Keyboard::KeyboardStateTracker m_keys;
+    DirectX::Mouse::ButtonStateTracker m_mouseButtons;
+
     DirectX::SimpleMath::Matrix m_world;
     DirectX::SimpleMath::Matrix m_view;
     DirectX::SimpleMath::Matrix m_proj;
+
+    float m_theta;
+    float m_phi;
+    float m_radius;
     
-    ViewerModel pc;
+    ViewerModel viewerModel;
 };

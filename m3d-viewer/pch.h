@@ -101,6 +101,9 @@
 
 #include <shlobj.h>
 #include <strsafe.h>
+#include <shellapi.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef _DEBUG
 #include <dxgidebug.h>

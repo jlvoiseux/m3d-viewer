@@ -20,6 +20,12 @@
     <Filter Include="Models">
       <UniqueIdentifier>{bccb11f0-b6ad-4584-899d-9754d774c2ea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\nfd">
+      <UniqueIdentifier>{22ced8d3-96ff-4ecd-96c5-057fc6cd7d62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nfd">
+      <UniqueIdentifier>{fdb8c02c-9e7b-459d-aa1d-22faafdf084d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Viewer.h">
@@ -76,15 +82,21 @@
     <ClInclude Include="d3dx12.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nfd\nfd.h">
+      <Filter>Header Files\nfd</Filter>
+    </ClInclude>
+    <ClInclude Include="nfd\nfd.hpp">
+      <Filter>Header Files\nfd</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Viewer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="M3dModel.cpp">
@@ -119,6 +131,12 @@
     </ClCompile>
     <ClCompile Include="DeviceResources.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nfd\nfd_win.cpp">
+      <Filter>Source Files\nfd</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

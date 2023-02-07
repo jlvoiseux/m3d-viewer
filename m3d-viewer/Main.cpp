@@ -9,6 +9,9 @@
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
 
+#define NFD_NATIVE
+#include "nfd/nfd.h"
+
 using namespace DirectX;
 
 #ifdef __clang__
@@ -55,8 +58,29 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 1;
 #endif
 
-    g_viewer = std::make_unique<Viewer>();
+    NFD_Init();
 
+    wchar_t* modelPath = L"";
+    nfdchar_t* outPath;
+    nfdfilteritem_t filterItem[1] = { { L"M3D models", L"m3d" } };
+    nfdresult_t result = NFD_OpenDialog(&modelPath, filterItem, 1, NULL);
+    if (result == NFD_OKAY)
+    {
+        // Do nothing
+    }
+    else if (result == NFD_CANCEL)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+
+    NFD_Quit();
+    
+    g_viewer = std::make_unique<Viewer>();
+   
     // Register class and create window
     {
         // Register class
@@ -72,6 +96,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         wcex.hIconSm = LoadIconW(wcex.hInstance, L"IDI_ICON");
         if (!RegisterClassExW(&wcex))
             return 1;
+
+        // Imgui setup
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        ImGui::StyleColorsLight();
 
         // Create window
         int w, h;
@@ -98,13 +128,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
         GetClientRect(hwnd, &rc);
 
-        std::unique_ptr<DX::DeviceResources>& deviceResources = g_viewer->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top);
+        std::unique_ptr<DX::DeviceResources>& deviceResources = g_viewer->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top, modelPath);
 
-        // Imgui setup
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-        ImGui::StyleColorsLight();
+        
 
         // Imgui setup for DirectX 12
 		auto device = deviceResources->GetD3DDevice();
@@ -140,8 +166,13 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 // Windows procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
+
+    if (io.WantCaptureMouse && (message == WM_LBUTTONDOWN || message == WM_LBUTTONUP || message == WM_RBUTTONDOWN || message == WM_RBUTTONUP || message == WM_MBUTTONDOWN || message == WM_MBUTTONUP || message == WM_MOUSEWHEEL || message == WM_MOUSEMOVE))
+    {
         return true;
+    }
     
     static bool s_in_sizemove = false;
     static bool s_in_suspend = false;
@@ -229,6 +260,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_ACTIVATEAPP:
+
+        Keyboard::ProcessMessage(message, wParam, lParam);
+        Mouse::ProcessMessage(message, wParam, lParam);
+
         if (viewer)
         {
             if (wParam)
@@ -302,6 +337,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         // A menu is active and the user presses a key that does not correspond
         // to any mnemonic or accelerator key. Ignore so we don't produce an error beep.
         return MAKELRESULT(0, MNC_CLOSE);
+
+
+    case WM_ACTIVATE:
+    case WM_INPUT:
+    case WM_MOUSEMOVE:
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+    case WM_MOUSEWHEEL:
+    case WM_XBUTTONDOWN:
+    case WM_XBUTTONUP:
+    case WM_MOUSEHOVER:
+        Mouse::ProcessMessage(message, wParam, lParam);
+        break;
+
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_SYSKEYUP:
+        Keyboard::ProcessMessage(message, wParam, lParam);
+        break;
+
+    case WM_MOUSEACTIVATE:
+        // When you click activate the window, we want Mouse to ignore it.
+        return MA_ACTIVATEANDEAT;
     }
 
     return DefWindowProc(hWnd, message, wParam, lParam);

@@ -14,20 +14,25 @@ void ViewerModel::Update(DX::StepTimer const& timer)
 
 void ViewerModel::Render(ID3D12GraphicsCommandList* commandList, Matrix world, Matrix view, Matrix proj)
 {
-    if (!dxtkModel_->textureNames.empty()) {
+    if (!dxtkModel_->textureNames.empty()) 
+    {
         ID3D12DescriptorHeap* heaps[] = { dxtkModelResources_->Heap(), dxtkStates_->Heap() };
         commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
         Model::UpdateEffectMatrices(dxtkModelNormal_, world, view, proj);
-        m3dModel_.ApplyAnimToDXTKModel(*dxtkModel_);
         dxtkModel_->Draw(commandList, dxtkModelNormal_.cbegin());
     }
-    else {
+    else 
+    {
 		dxtkBasic->SetWorld(world);
 		dxtkBasic->SetView(view);
 		dxtkBasic->SetProjection(proj);
-        m3dModel_.ApplyAnimToDXTKModel(*dxtkModel_);
         dxtkBasic->Apply(commandList);
         dxtkModel_->Draw(commandList);
+    }
+
+	if (m3dModel_.GetAnimNames().size() > 0)
+    {
+        m3dModel_.ApplyAnimToDXTKModel(*dxtkModel_);
     }
 }
 
@@ -51,8 +56,8 @@ void ViewerModel::CreateDeviceDependentResources(ID3D12Device* device, DXGI_FORM
         dxtkModelNormal_ = dxtkModel_->CreateEffects(*dxtkFxFactory_, pd, pd);
     }
     else {
-        EffectPipelineStateDescription pd(&VertexPositionNormalTexture::InputLayout, CommonStates::AlphaBlend, CommonStates::DepthDefault, CommonStates::CullClockwise, rtState);
-        dxtkBasic = std::make_unique<BasicEffect>(device, EffectFlags::Lighting, pd);
+        EffectPipelineStateDescription pd(&VertexPositionNormalColorTexture::InputLayout, CommonStates::Opaque, CommonStates::DepthDefault, CommonStates::CullClockwise, rtState);
+        dxtkBasic = std::make_unique<BasicEffect>(device, EffectFlags::Lighting|EffectFlags::VertexColor, pd);
     }
 }
 

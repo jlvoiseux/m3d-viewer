@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "M3dModel.h"
-
+#include "Util.h"
 #include "Effects.h"
 #include "VertexTypes.h"
 
@@ -17,11 +17,6 @@
 
 using namespace DirectX;
 using namespace std::filesystem;
-
-std::wstring StringToWString(std::string input)
-{
-    return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(input);
-}
 
 M3dModel::M3dModel(ID3D12Device* device, const wchar_t* szFileName)
 {
@@ -43,6 +38,7 @@ M3dModel::M3dModel(ID3D12Device* device, const wchar_t* szFileName)
     name_ = modelPath.filename().wstring();
     containing_dir_ = modelPath.parent_path().wstring() + L"\\";
     animTime_ = 0;
+    animIdx_ = 0;
 }
 
 std::unique_ptr<Model> M3dModel::BuildDXTKModel()
@@ -54,6 +50,12 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
     std::vector<m3dv_t> m3dVerts = m3dModel->getVertices();
     std::vector<m3df_t> m3dTris = m3dModel->getFace();
     std::vector<m3dti_t> m3dTex = m3dModel->getTextureMap();
+    std::vector<uint32_t> m3dColors = m3dModel->getColorMap();
+
+	std::vector<m3da_t> m3dActions = m3dModel->getActions();
+    for (auto it = begin(m3dActions); it != end(m3dActions); ++it) {
+		animNames_.push_back(Util::StringToWString(it->name));
+    }
 
     auto dxtkModel = std::make_unique<Model>();
     dxtkModel->meshes.reserve(1);
@@ -64,17 +66,17 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
 
     std::vector<Model::ModelMaterialInfo> materials;
     materials.resize(m3dMaterials.size());
-    for (auto it = begin(m3dMaterials); it != end(m3dMaterials); ++it) {
-        auto& mat = materials[0];
-        mat.name = StringToWString(it->name);
-        mat.ambientColor = XMFLOAT3(1.f, 1.f, 1.f);
-        mat.diffuseColor = XMFLOAT3(1.f, 1.f, 1.f);
-        mat.specularColor = XMFLOAT3(0.3f, 0.3f, 0.3f);
-        mat.specularPower = 360;
-        mat.alphaValue = 1.f;
-        mat.diffuseTextureIndex = 0; // HARDCODED
-        mat.samplerIndex = 4;
-    }
+    int matCount = 0;
+    auto& mat = materials[0];
+    mat.name = L"material";
+    mat.ambientColor = XMFLOAT3(1.f, 1.f, 1.f);
+    mat.diffuseColor = XMFLOAT3(1.f, 1.f, 1.f);
+    mat.specularColor = XMFLOAT3(0.3f, 0.3f, 0.3f);
+    mat.specularPower = 360;
+    mat.alphaValue = 1.f;
+    mat.diffuseTextureIndex = 0; // HARDCODED
+    mat.samplerIndex = 4;
+ 
     // Copy the materials and texture names into contiguous arrays
     dxtkModel->materials = std::move(materials);
 
@@ -82,10 +84,13 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
     const std::wstring fileFormat = L".png";
     int texCount = 0;
     for (auto it = begin(m3dTextures); it != end(m3dTextures); ++it) {
-        std::wstring texName = StringToWString(it->name) + fileFormat;
+        std::wstring texName = Util::StringToWString(it->name) + fileFormat;
         std::wstring wTexName = containing_dir_ + texName;
-        textureDictionary[wTexName] = texCount;
-        texCount++;
+        if (exists(wTexName))
+        {
+            textureDictionary[wTexName] = texCount;
+            texCount++;
+        }
     }
     dxtkModel->textureNames.resize(textureDictionary.size());
     for (auto texture = std::cbegin(textureDictionary); texture != std::cend(textureDictionary); ++texture)
@@ -93,7 +98,7 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
         dxtkModel->textureNames[static_cast<size_t>(texture->second)] = texture->first;
     }
 
-    const size_t stride = sizeof(VertexPositionNormalTexture);
+    const size_t stride = sizeof(VertexPositionNormalColorTexture);
 
     part->materialIndex = 0;
 
@@ -108,13 +113,24 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
     // Index Buffer
     std::vector<uint16_t> indices;
     for (auto it = begin(m3dTris); it != end(m3dTris); ++it) {
+        uint32_t currMatId = it->materialid;
+		m3dm_t currMat = m3dMaterials[currMatId];
+        XMFLOAT4 currColor = XMFLOAT4(1, 1, 1, 1);
+        for (int i = 0; i < currMat.numprop; i++) {
+			if (currMat.prop[i].type == m3dp_Kd) {
+                uint32_t tempColor = currMat.prop[i].value.color;
+                currColor = XMFLOAT4((tempColor & 0x000000FF) / 255.0f, ((tempColor & 0x0000FF00) >> 8) / 255.0f, ((tempColor & 0x00FF0000) >> 16) / 255.0f, ((tempColor & 0xFF000000) >> 24) / 255.0f);
+				break;
+			}
+        }
         for (int i : {0, 1, 2}) {
             uint16_t currVert = it->vertex[i];
             uint16_t currNorm = it->normal[i];
             uint16_t currTexcoord = it->texcoord[i];
-            VertexPositionNormalTexture vertexData = VertexPositionNormalTexture(
+            VertexPositionNormalColorTexture vertexData = VertexPositionNormalColorTexture(
                 XMFLOAT3(m3dVerts[currVert].x, m3dVerts[currVert].y, m3dVerts[currVert].z),
                 XMFLOAT3(m3dVerts[currNorm].x, m3dVerts[currNorm].y, m3dVerts[currNorm].z),
+                currColor,
                 XMFLOAT2(m3dTex[currTexcoord].u, 1 - m3dTex[currTexcoord].v)
             );
             std::string vertexDataKey =
@@ -152,8 +168,8 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
     memcpy(part->indexBuffer.Memory(), indices.data(), part->indexBufferSize);
     
 
-    part->vbDecl = std::make_shared<ModelMeshPart::InputLayoutCollection>(VertexPositionNormalTexture::InputLayout.pInputElementDescs,
-        VertexPositionNormalTexture::InputLayout.pInputElementDescs + VertexPositionNormalTexture::InputLayout.NumElements);
+    part->vbDecl = std::make_shared<ModelMeshPart::InputLayoutCollection>(VertexPositionNormalColorTexture::InputLayout.pInputElementDescs,
+        VertexPositionNormalColorTexture::InputLayout.pInputElementDescs + VertexPositionNormalColorTexture::InputLayout.NumElements);
 
     mesh->opaqueMeshParts.emplace_back(part);
     dxtkModel->meshes.emplace_back(mesh);
@@ -171,7 +187,7 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
         ModelBone bone;
         std::string currName = it->name;
         unsigned int currParent = it->parent;
-        bone.name = StringToWString(it->name);
+        bone.name = Util::StringToWString(it->name);
         bone.parentIndex = currParent;
         bone.childIndex = maxInt;
         bone.siblingIndex = maxInt;
@@ -197,18 +213,21 @@ std::unique_ptr<Model> M3dModel::BuildDXTKModel()
     std::swap(dxtkModel->bones, bones);
 
     // Compute inverse bind pose matrices for the model
-    auto bindPose = ModelBone::MakeArray(bNum);
-    dxtkModel->CopyAbsoluteBoneTransforms(bNum, transforms.get(), bindPose.get());
-
-    auto invBoneTransforms = ModelBone::MakeArray(bNum);
-    for (size_t j = 0; j < bNum; ++j)
+    if (bNum > 0)
     {
-        invBoneTransforms[j] = XMMatrixInverse(nullptr, bindPose[j]);
+        auto bindPose = ModelBone::MakeArray(bNum);
+        dxtkModel->CopyAbsoluteBoneTransforms(bNum, transforms.get(), bindPose.get());
+
+        auto invBoneTransforms = ModelBone::MakeArray(bNum);
+        for (size_t j = 0; j < bNum; ++j)
+        {
+            invBoneTransforms[j] = XMMatrixInverse(nullptr, bindPose[j]);
+        }
+
+        std::swap(dxtkModel->boneMatrices, transforms);
+        std::swap(dxtkModel->invBindPoseMatrices, invBoneTransforms);
     }
-
-    std::swap(dxtkModel->boneMatrices, transforms);
-    std::swap(dxtkModel->invBindPoseMatrices, invBoneTransforms);
-
+    
     dxtkModel->name = name_;
 
     return dxtkModel;
@@ -223,10 +242,10 @@ void M3dModel::ApplyAnimToDXTKModel(const DirectX::Model& dxtkModel)
     std::vector<m3db_t> bindPose = m3dModel->getBones();
 
     // Get the animation-pose skeleton
-    std::vector<m3db_t> animPose = m3dModel->getActionPose(1, animTime_);
+    std::vector<m3db_t> animPose = m3dModel->getActionPose(animIdx_, animTime_);
 
     // Convert mesh vertices from bind pose to animation pose
-    std::vector<VertexPositionNormalTexture> vbo = vertexBuffer_;
+    std::vector<VertexPositionNormalColorTexture> vbo = vertexBuffer_;
     std::vector<m3ds_t> m3dSkin = m3dModel->getSkin();
     int count = 0;
     for (auto it = begin(vbo); it != end(vbo); ++it) {
@@ -234,6 +253,12 @@ void M3dModel::ApplyAnimToDXTKModel(const DirectX::Model& dxtkModel)
         m3dv_t currNorm = m3dVerts[dxtkM3dNormalMap_[count]];
         m3ds_t currSkin = m3dSkin[currVert.skinid];
         if (currVert.skinid != -1U) {
+            float incVX = 0;
+            float incVY = 0;
+            float incVZ = 0;
+            float incNX = 0;
+            float incNY = 0;
+            float incNZ = 0;
             for (int i = 0; i < M3D_NUMBONE && currSkin.weight[i] > 0.0; i++) {
                 XMFLOAT4X4 bindPoseMatrixInit = XMFLOAT4X4(bindPose[currSkin.boneid[i]].mat4);
                 XMFLOAT4X4 animPoseMatrixInit = XMFLOAT4X4(animPose[currSkin.boneid[i]].mat4);
@@ -250,9 +275,9 @@ void M3dModel::ApplyAnimToDXTKModel(const DirectX::Model& dxtkModel)
                 // Then convert from bone-local space into animation-pose model-space
                 XMStoreFloat4(&currVertUpdated, XMVector4Transform(vertBindPoseBoneSpace, animPoseMatrix));
                 // Multiply with weight and accumulate
-                it->position.x += currVertUpdated.x * currSkin.weight[i];
-                it->position.y += currVertUpdated.y * currSkin.weight[i];
-                it->position.z += currVertUpdated.z * currSkin.weight[i];
+                incVX += currVertUpdated.x * currSkin.weight[i];
+                incVY += currVertUpdated.y * currSkin.weight[i];
+                incVZ += currVertUpdated.z * currSkin.weight[i];
 
                 // NORMAL
                 XMFLOAT4 currNormInit = XMFLOAT4(currNorm.x, currNorm.y, currNorm.z, 1.0f);
@@ -266,6 +291,9 @@ void M3dModel::ApplyAnimToDXTKModel(const DirectX::Model& dxtkModel)
                 it->normal.y += currNormUpdated.y * currSkin.weight[i];
                 it->normal.z += currNormUpdated.z * currSkin.weight[i];
             }
+			it->position.x = incVX;
+            it->position.y = incVY;
+            it->position.z = incVZ;
         }
         count++;
     }
