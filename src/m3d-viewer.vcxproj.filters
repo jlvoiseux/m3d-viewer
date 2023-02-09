@@ -17,9 +17,6 @@
     <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{14461730-5cd7-49e2-a3b6-f4794c677082}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Models">
-      <UniqueIdentifier>{bccb11f0-b6ad-4584-899d-9754d774c2ea}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\nfd">
       <UniqueIdentifier>{22ced8d3-96ff-4ecd-96c5-057fc6cd7d62}</UniqueIdentifier>
     </Filter>
@@ -163,11 +160,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="models\bird.m3d">
-      <Filter>Models</Filter>
-    </None>
-    <None Include="models\skeleton.m3d">
-      <Filter>Models</Filter>
-    </None>
   </ItemGroup>
 </Project>
