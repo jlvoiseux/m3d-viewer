@@ -26,6 +26,15 @@
     <Filter Include="Source Files\nfd">
       <UniqueIdentifier>{fdb8c02c-9e7b-459d-aa1d-22faafdf084d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\additionnal-dx-deps">
+      <UniqueIdentifier>{f84251f8-61c8-4186-adf8-27f80d053ac7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\additionnal-dx-deps">
+      <UniqueIdentifier>{3b404528-d98b-4a65-a279-a6eea502b608}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\m3d">
+      <UniqueIdentifier>{cb142fff-fabf-4bf3-b116-e0f6767d367e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Viewer.h">
@@ -34,16 +43,7 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="M3d.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="M3dModel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BinaryReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PlatformHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ViewerModel.h">
@@ -73,15 +73,6 @@
     <ClInclude Include="imgui\imstb_truetype.h">
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="DeviceResources.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StepTimer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="d3dx12.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,6 +81,24 @@
     </ClInclude>
     <ClInclude Include="nfd\nfd.hpp">
       <Filter>Header Files\nfd</Filter>
+    </ClInclude>
+    <ClInclude Include="additionnal-dx-deps\BinaryReader.h">
+      <Filter>Header Files\additionnal-dx-deps</Filter>
+    </ClInclude>
+    <ClInclude Include="additionnal-dx-deps\d3dx12.h">
+      <Filter>Header Files\additionnal-dx-deps</Filter>
+    </ClInclude>
+    <ClInclude Include="additionnal-dx-deps\DeviceResources.h">
+      <Filter>Header Files\additionnal-dx-deps</Filter>
+    </ClInclude>
+    <ClInclude Include="additionnal-dx-deps\PlatformHelpers.h">
+      <Filter>Header Files\additionnal-dx-deps</Filter>
+    </ClInclude>
+    <ClInclude Include="additionnal-dx-deps\StepTimer.h">
+      <Filter>Header Files\additionnal-dx-deps</Filter>
+    </ClInclude>
+    <ClInclude Include="M3d.h">
+      <Filter>Header Files\m3d</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -100,9 +109,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="M3dModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BinaryReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ViewerModel.cpp">
@@ -129,14 +135,17 @@
     <ClCompile Include="imgui\imgui_widgets.cpp">
       <Filter>Source Files\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="DeviceResources.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="nfd\nfd_win.cpp">
       <Filter>Source Files\nfd</Filter>
+    </ClCompile>
+    <ClCompile Include="additionnal-dx-deps\BinaryReader.cpp">
+      <Filter>Source Files\additionnal-dx-deps</Filter>
+    </ClCompile>
+    <ClCompile Include="additionnal-dx-deps\DeviceResources.cpp">
+      <Filter>Source Files\additionnal-dx-deps</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -144,12 +153,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="cup.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="mc-texture-3.png">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>
@@ -160,24 +163,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="cup.sdkmesh">
-      <Filter>Assets</Filter>
-    </None>
-    <None Include="mc.m3d">
-      <Filter>Assets</Filter>
-    </None>
-    <None Include="mc.fbx">
-      <Filter>Assets</Filter>
-    </None>
-    <None Include="mc.sdkmesh">
-      <Filter>Assets</Filter>
-    </None>
-    <None Include="mc.sdkmesh_anim">
-      <Filter>Assets</Filter>
-    </None>
-    <None Include="mc.mtl">
-      <Filter>Assets</Filter>
-    </None>
     <None Include="models\bird.m3d">
       <Filter>Models</Filter>
     </None>

@@ -1,9 +1,10 @@
 #pragma once
-#include "M3dModel.h"
-#include "StepTimer.h"
-#include "DeviceResources.h"
-#include "SimpleMath.h"
+
 #include <Effects.h>
+
+#include "additionnal-dx-deps/StepTimer.h"
+#include "additionnal-dx-deps/DeviceResources.h"
+#include "M3dModel.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -12,6 +13,7 @@ using Microsoft::WRL::ComPtr;
 class ViewerModel {
 
 public:
+    
     ViewerModel() = default;
     ViewerModel(const wchar_t* m3dPath);
     void Update(DX::StepTimer const& timer);
@@ -21,8 +23,10 @@ public:
     
 	std::wstring GetModelName()                     const   { return m3dModel_.GetName(); };
     std::vector<std::wstring> GetAnimationNames()   const   { return m3dModel_.GetAnimNames(); };
-	void SetAnimation(int idx)                              { m3dModel_.SetAnimIdx(idx); }
+    void SetAnimation(int idx) { m3dModel_.SetAnimIdx(idx); };
+    
 private:
+    
     const wchar_t* m3dPath_;
     M3dModel m3dModel_;
     std::unique_ptr<CommonStates> dxtkStates_;

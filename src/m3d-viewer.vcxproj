@@ -199,8 +199,11 @@
     </FXCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BinaryReader.h" />
-    <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="additionnal-dx-deps\BinaryReader.h" />
+    <ClInclude Include="additionnal-dx-deps\d3dx12.h" />
+    <ClInclude Include="additionnal-dx-deps\DeviceResources.h" />
+    <ClInclude Include="additionnal-dx-deps\PlatformHelpers.h" />
+    <ClInclude Include="additionnal-dx-deps\StepTimer.h" />
     <ClInclude Include="nfd\nfd.h" />
     <ClInclude Include="nfd\nfd.hpp" />
     <ClInclude Include="Util.h" />
@@ -216,13 +219,11 @@
     <ClInclude Include="M3d.h" />
     <ClInclude Include="M3dModel.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PlatformHelpers.h" />
     <ClInclude Include="ViewerModel.h" />
-    <ClInclude Include="StepTimer.h" />
-    <ClInclude Include="DeviceResources.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BinaryReader.cpp" />
+    <ClCompile Include="additionnal-dx-deps\BinaryReader.cpp" />
+    <ClCompile Include="additionnal-dx-deps\DeviceResources.cpp" />
     <ClCompile Include="nfd\nfd_win.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="Viewer.cpp" />
@@ -235,27 +236,18 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="M3dModel.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="ViewerModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="cup.jpg" />
     <Image Include="directx.ico" />
-    <Image Include="mc-texture-3.png" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="settings.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cup.sdkmesh" />
-    <None Include="mc.fbx" />
-    <None Include="mc.m3d" />
-    <None Include="mc.mtl" />
-    <None Include="mc.sdkmesh" />
-    <None Include="mc.sdkmesh_anim" />
     <None Include="models\bird.m3d" />
     <None Include="models\skeleton.m3d" />
     <None Include="packages.config" />

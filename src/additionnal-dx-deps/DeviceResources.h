@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "d3dx12.h"
+
 namespace DX
 {
     // Provides an interface for an application that owns DeviceResources to be notified of the device being lost or created.

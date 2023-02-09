@@ -3,11 +3,13 @@
 //
 
 #include "pch.h"
-#include "Util.h"
-#include "Viewer.h"
+
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
+
+#include "Util.h"
+#include "Viewer.h"
 
 extern void ExitViewer() noexcept;
 
@@ -21,13 +23,15 @@ namespace
     const XMVECTORF32 ROOM_BOUNDS = { 8.f, 6.f, 12.f, 0.f };
     constexpr float ROTATION_GAIN = 0.02f;
     constexpr float MOVEMENT_GAIN = 0.07f;
-
+    
+    constexpr float c_defaultTheta = 0;
     constexpr float c_defaultPhi = XM_2PI / 5.0f;
     constexpr float c_defaultRadius = 3.3f;
     constexpr float c_minRadius = 0.1f;
     constexpr float c_maxRadius = 5.f;
 }
 
+// Pix debugging
 static std::wstring GetLatestWinPixGpuCapturerPath()
 {
     LPWSTR programFilesPath = nullptr;
@@ -79,12 +83,9 @@ Viewer::Viewer() noexcept(false)
     }
 
     m_deviceResources = std::make_unique<DX::DeviceResources>();
-    // TODO: Provide parameters for swapchain format, depth/stencil format, and backbuffer count.
-    //   Add DX::DeviceResources::c_AllowTearing to opt-in to variable rate displays.
-    //   Add DX::DeviceResources::c_EnableHDR for HDR10 display.
     m_deviceResources->RegisterDeviceNotify(this);
 
-    m_theta = 0;
+    m_theta = c_defaultTheta;
     m_phi = c_defaultPhi;
     m_radius = c_defaultRadius;
 }
@@ -203,6 +204,7 @@ void Viewer::Render()
     auto commandList = m_deviceResources->GetCommandList();
     PIXBeginEvent(commandList, PIX_COLOR_DEFAULT, L"Render");
 
+    // Render ImGui
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -224,11 +226,10 @@ void Viewer::Render()
     {
         ImGui::Text("No animations");
     }
-    
     ImGui::End();
-
     ImGui::Render();
-
+    
+    // Render model
     viewerModel.Render(commandList, m_world, m_view, m_proj);
 
     auto srvDh = m_deviceResources->GetD3DDescriptorHeap();
@@ -365,8 +366,6 @@ void Viewer::CreateWindowSizeDependentResources()
 
 void Viewer::OnDeviceLost()
 {
-
-    // If using the DirectX Tool Kit for DX12, uncomment this line:
     m_graphicsMemory.reset();
     
     viewerModel.OnDeviceLost();

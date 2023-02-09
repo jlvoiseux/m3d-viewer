@@ -44,8 +44,6 @@
 #include <dxguids/dxguids.h>
 #else
 #include <d3d12.h>
-
-#include "d3dx12.h"
 #endif
 
 #include <dxgi1_6.h>
@@ -69,13 +67,17 @@
 #include <locale>
 #include <map>
 #include <memory>
+#include <shellapi.h>
+#include <shlobj.h>
 #include <stdexcept>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
+#include <strsafe.h>
 #include <system_error>
 #include <tuple>
 
 // DirectXTK12 headers
-#include "BinaryReader.h"
 #include "BufferHelpers.h"
 #include "CommonStates.h"
 #include "DDSTextureLoader.h"
@@ -99,11 +101,7 @@
 #include "VertexTypes.h"
 #include "WICTextureLoader.h"
 
-#include <shlobj.h>
-#include <strsafe.h>
-#include <shellapi.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "additionnal-dx-deps/BinaryReader.h"
 
 #ifdef _DEBUG
 #include <dxgidebug.h>

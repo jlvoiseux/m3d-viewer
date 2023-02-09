@@ -1,15 +1,10 @@
-//
-// Game.h
-//
-
 #pragma once
 
-#include "DeviceResources.h"
-#include "ViewerModel.h"
-#include "StepTimer.h"
+#include "additionnal-dx-deps/DeviceResources.h"
+#include "additionnal-dx-deps/StepTimer.h"
 
-// A basic game implementation that creates a D3D12 device and
-// provides a game loop.
+#include "ViewerModel.h"
+
 class Viewer final : public DX::IDeviceNotify
 {
 public:
@@ -63,15 +58,16 @@ private:
 
     std::unique_ptr<DirectX::GraphicsMemory> m_graphicsMemory;
 
+	// Input devices.
     std::unique_ptr<DirectX::Keyboard> m_keyboard;
     std::unique_ptr<DirectX::Mouse> m_mouse;
     DirectX::Keyboard::KeyboardStateTracker m_keys;
     DirectX::Mouse::ButtonStateTracker m_mouseButtons;
 
+    // World and camera configuration
     DirectX::SimpleMath::Matrix m_world;
     DirectX::SimpleMath::Matrix m_view;
     DirectX::SimpleMath::Matrix m_proj;
-
     float m_theta;
     float m_phi;
     float m_radius;

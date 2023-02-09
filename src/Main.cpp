@@ -3,7 +3,6 @@
 //
 
 #include "pch.h"
-#include "Viewer.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
@@ -11,6 +10,8 @@
 
 #define NFD_NATIVE
 #include "nfd/nfd.h"
+
+#include "Viewer.h"
 
 using namespace DirectX;
 
@@ -20,15 +21,6 @@ using namespace DirectX;
 #endif
 
 #pragma warning(disable : 4061)
-
-#ifdef USING_D3D12_AGILITY_SDK
-extern "C"
-{
-    // Used to enable the "Agility SDK" components
-    __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION;
-    __declspec(dllexport) extern const char* D3D12SDKPath = u8".\\D3D12\\";
-}
-#endif
 
 namespace
 {
@@ -58,25 +50,21 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         return 1;
 #endif
 
+    // Initial file selection dialog
     NFD_Init();
-
     wchar_t* modelPath = L"";
     nfdchar_t* outPath;
     nfdfilteritem_t filterItem[1] = { { L"M3D models", L"m3d" } };
     nfdresult_t result = NFD_OpenDialog(&modelPath, filterItem, 1, NULL);
-    if (result == NFD_OKAY)
+    switch (result)
     {
-        // Do nothing
+	case NFD_OKAY:
+		break; // File selection was successful, do nothing
+	case NFD_CANCEL:
+		return 0;
+    default:
+		return 1;
     }
-    else if (result == NFD_CANCEL)
-    {
-        return 0;
-    }
-    else
-    {
-        return 1;
-    }
-
     NFD_Quit();
     
     g_viewer = std::make_unique<Viewer>();
@@ -106,33 +94,20 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         // Create window
         int w, h;
         g_viewer->GetDefaultSize(w, h);
-
         RECT rc = { 0, 0, static_cast<LONG>(w), static_cast<LONG>(h) };
-
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-
         HWND hwnd = CreateWindowExW(0, L"VersusWindowClass", g_szAppName, WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
             nullptr);
-        // TODO: Change to CreateWindowExW(WS_EX_TOPMOST, L"VersusWindowClass", g_szAppName, WS_POPUP,
-        // to default to fullscreen.
-
         if (!hwnd)
             return 1;
-
         ShowWindow(hwnd, nCmdShow);
         UpdateWindow(hwnd);
-        // TODO: Change nCmdShow to SW_SHOWMAXIMIZED to default to fullscreen.
-
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(g_viewer.get()));
-
         GetClientRect(hwnd, &rc);
 
-        std::unique_ptr<DX::DeviceResources>& deviceResources = g_viewer->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top, modelPath);
-
-        
-
         // Imgui setup for DirectX 12
+        std::unique_ptr<DX::DeviceResources>& deviceResources = g_viewer->Initialize(hwnd, rc.right - rc.left, rc.bottom - rc.top, modelPath);
 		auto device = deviceResources->GetD3DDevice();
 		auto descriptorHeap = deviceResources->GetD3DDescriptorHeap();
         ImGui_ImplWin32_Init(hwnd);
@@ -169,6 +144,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
 
+    // Prevent Imgui input to affect viewer behavior
     if (io.WantCaptureMouse && (message == WM_LBUTTONDOWN || message == WM_LBUTTONUP || message == WM_RBUTTONDOWN || message == WM_RBUTTONUP || message == WM_MBUTTONDOWN || message == WM_MBUTTONUP || message == WM_MOUSEWHEEL || message == WM_MOUSEMOVE))
     {
         return true;

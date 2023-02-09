@@ -1,4 +1,5 @@
 #include "pch.h"
+
 #include "ViewerModel.h"
 
 ViewerModel::ViewerModel(const wchar_t* m3dPath)
@@ -14,20 +15,21 @@ void ViewerModel::Update(DX::StepTimer const& timer)
 
 void ViewerModel::Render(ID3D12GraphicsCommandList* commandList, Matrix world, Matrix view, Matrix proj)
 {
-    if (!dxtkModel_->textureNames.empty()) 
+	// If there are no texture, just display vertex colors
+    if (dxtkModel_->textureNames.empty()) 
+    {
+        dxtkBasic->SetWorld(world);
+        dxtkBasic->SetView(view);
+        dxtkBasic->SetProjection(proj);
+        dxtkBasic->Apply(commandList);
+        dxtkModel_->Draw(commandList);
+    }
+    else 
     {
         ID3D12DescriptorHeap* heaps[] = { dxtkModelResources_->Heap(), dxtkStates_->Heap() };
         commandList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
         Model::UpdateEffectMatrices(dxtkModelNormal_, world, view, proj);
         dxtkModel_->Draw(commandList, dxtkModelNormal_.cbegin());
-    }
-    else 
-    {
-		dxtkBasic->SetWorld(world);
-		dxtkBasic->SetView(view);
-		dxtkBasic->SetProjection(proj);
-        dxtkBasic->Apply(commandList);
-        dxtkModel_->Draw(commandList);
     }
 
 	if (m3dModel_.GetAnimNames().size() > 0)

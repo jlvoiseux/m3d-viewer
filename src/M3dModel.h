@@ -11,6 +11,7 @@ using Microsoft::WRL::ComPtr;
 class M3dModel {
 
 public:
+    
     M3dModel() = default;
     M3dModel(ID3D12Device* device, const wchar_t* szFileName);
     std::unique_ptr<Model> BuildDXTKModel();
@@ -20,7 +21,9 @@ public:
     std::wstring GetName()                      const   { return name_; };
 	std::vector<std::wstring> GetAnimNames()    const   { return animNames_; }
 	void SetAnimIdx(int idx)                            { animIdx_ = idx; animTime_ = 0;}
+    
 private:
+    
     ID3D12Device* device_;
     void* m3dModel_;
     std::wstring name_;
