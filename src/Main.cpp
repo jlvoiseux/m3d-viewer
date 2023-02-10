@@ -52,7 +52,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
     // Initial file selection dialog
     NFD_Init();
-    wchar_t* modelPath = L"";
+    wchar_t* modelPath;
     nfdchar_t* outPath;
     nfdfilteritem_t filterItem[1] = { { L"M3D models", L"m3d" } };
     nfdresult_t result = NFD_OpenDialog(&modelPath, filterItem, 1, NULL);
